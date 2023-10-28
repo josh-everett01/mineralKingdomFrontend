@@ -1,12 +1,24 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view />
+    <router-view></router-view>
+    <h1>Welcome to Mineral Kingdom</h1>
+    <Minerals />
+    <Auctions />
   </div>
 </template>
+
+<script>
+import Minerals from './components/Minerals.vue';
+import Auctions from './components/Auctions.vue';
+
+export default {
+  name: 'App',
+  components: {
+    Minerals,
+    Auctions,
+  },
+};
+</script>
 
 <style>
 #app {
