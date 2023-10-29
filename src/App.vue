@@ -1,21 +1,22 @@
 <template>
   <div id="app">
-    <router-view></router-view>
-    <h1>Welcome to Mineral Kingdom</h1>
-    <Minerals />
-    <Auctions />
+    <Header />
+    <div class="content">
+      <MainImage />
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 
 <script>
-import Minerals from './components/Minerals.vue';
-import Auctions from './components/Auctions.vue';
+import Header from "./components/Header.vue";
+import MainImage from "./components/MainImage.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    Minerals,
-    Auctions,
+    Header,
+    MainImage,
   },
 };
 </script>
@@ -31,6 +32,10 @@ export default {
 
 #nav {
   padding: 30px;
+}
+
+.content {
+  padding-top: 70px; /* Adjust this value based on the height of your header */
 }
 
 #nav a {

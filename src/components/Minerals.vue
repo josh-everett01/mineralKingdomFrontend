@@ -9,13 +9,14 @@
       />
       <h3>{{ mineral.name }}</h3>
       <p>{{ mineral.description }}</p>
+      <p>${{ mineral.price }}</p>
     </div>
   </div>
 </template>
 
 
 <script>
-import axios from 'axios';
+import MineralService from '../services/MineralService';
 
 export default {
   data() {
@@ -25,8 +26,7 @@ export default {
   },
   async created() {
     try {
-      const response = await axios.get('https://localhost:7240/api/Minerals');
-      this.minerals = response.data;
+      this.minerals = await MineralService.getMinerals();
     } catch (error) {
       console.error('Error fetching minerals:', error);
     }
