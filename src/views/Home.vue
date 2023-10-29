@@ -1,18 +1,50 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js App" />
+    <div v-if="showMessage" class="message">
+      {{ registrationMessage }}
+    </div>
+    <HomeStore />
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from "@/components/HelloWorld.vue";
+import HomeStore from "../components/HomeStore.vue";
 
 export default {
   name: "Home",
   components: {
-    HelloWorld,
+    HomeStore,
+  },
+  data() {
+    return {
+      showMessage: false,
+    };
+  },
+  computed: {
+    registrationMessage() {
+      return this.$store.getters.getRegistrationMessage;
+    },
+  },
+  watch: {
+    registrationMessage: {
+      immediate: true,
+      handler(newMessage) {
+        if (newMessage) {
+          this.showMessage = true;
+          setTimeout(() => {
+            this.$store.dispatch("clearRegistrationMessage");
+            this.showMessage = false;
+          }, 5000);
+        }
+      },
+    },
   },
 };
 </script>
+
+<style scoped>
+.message {
+  color: green;
+  margin-top: 10px;
+}
+</style>

@@ -1,30 +1,70 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 import Home from "../views/Home.vue";
-import Login from '../views/Login.vue'
+import Register from "../components/Register.vue"
+// import Shop from '../views/Shop.vue';
+// import Auctions from '../views/Auctions.vue';
+// import ProductDetail from '../views/ProductDetail.vue';
+// import UserProfile from '../views/UserProfile.vue';
+import Login from "../views/Login.vue";
+import VerifyEmail from "../views/VerifyEmail.vue";
+import MineralsPage from "../components/MineralsPage.vue"
+// import Cart from '../views/Cart.vue';
 
 Vue.use(VueRouter);
 
 const routes = [
   {
-    path: "/",
-    name: "Home",
+    path: "/home",
+    name: "home",
     component: Home,
   },
   {
-    path: "/about",
-    name: "About",
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "about" */ "../views/About.vue"),
+    path: "/register",
+    name: "register",
+    component: Register,
   },
   {
-    path: '/login',
-    name: 'login',
-    component: Login
+    path: "/verify-email",
+    name: "verify-email",
+    component: VerifyEmail,
   },
+  {
+    path: "/store/minerals",
+    name: "Minerals",
+    component: MineralsPage,
+  },
+  // {
+  //   path: "/shop",
+  //   name: "Shop",
+  //   component: Shop,
+  // },
+  // {
+  //   path: "/auctions",
+  //   name: "Auctions",
+  //   component: Auctions,
+  // },
+  // {
+  //   path: "/products/:id",
+  //   name: "ProductDetail",
+  //   component: ProductDetail,
+  // },
+  // {
+  //   path: "/profile",
+  //   name: "UserProfile",
+  //   component: UserProfile,
+  // },
+  {
+    path: "/login",
+    name: "Login",
+    component: Login,
+  },
+  // {
+  //   path: "/cart",
+  //   name: "Cart",
+  //   component: Cart,
+  // },
+  // Add any other routes as necessary
 ];
 
 const router = new VueRouter({
