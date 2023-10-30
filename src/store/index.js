@@ -1,11 +1,16 @@
 // src/store/index.js
 import Vue from 'vue'
 import Vuex from 'vuex'
-import createPersistedState from 'vuex-persistedstate' // Import the plugin
+import createPersistedState from 'vuex-persistedstate'
+import minerals from "../store/modules/minerals";
+import MineralService from '../services/MineralService';
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
+  modules: {
+    minerals,
+  },
   state: {
     user: null,
     registrationMessage: null,
@@ -38,6 +43,18 @@ export default new Vuex.Store({
     },
     logout({ commit }) {
       commit('SET_USER', null)
+    },
+    async fetchMineral({ commit }, mineralId) {
+      try {
+        commit('SET_LOADING', true);
+        const mineral = await MineralService.getMineral(mineralId);
+        commit('SET_CURRENT_MINERAL', mineral);
+      } catch (error) {
+        console.error('Error fetching mineral:', error);
+        commit('SET_ERROR', 'Failed to load mineral');
+      } finally {
+        commit('SET_LOADING', false);
+      }
     },
   },
   getters: {
