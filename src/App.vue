@@ -46,4 +46,14 @@ export default {
 #nav a.router-link-exact-active {
   color: #42b983;
 }
+
+a {
+  color: black; /* Black text */
+  text-decoration: none; /* No underline by default */
+}
+
+a:hover {
+  text-decoration: underline; /* Underline on hover */
+  text-decoration-color: white; /* White underline */
+}
 </style>

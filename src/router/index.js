@@ -9,6 +9,7 @@ import Register from "../components/Register.vue"
 import Login from "../views/Login.vue";
 import VerifyEmail from "../views/VerifyEmail.vue";
 import MineralsPage from "../components/MineralsPage.vue"
+import MineralDetail from "../views/MineralDetail.vue"
 // import Cart from '../views/Cart.vue';
 
 Vue.use(VueRouter);
@@ -33,6 +34,12 @@ const routes = [
     path: "/store/minerals",
     name: "Minerals",
     component: MineralsPage,
+  },
+  {
+    path: "/minerals/:id", // Add this new route
+    name: "mineral-detail",
+    component: MineralDetail,
+    props: true, // This ensures that the :id param is passed as a prop to the component
   },
   // {
   //   path: "/shop",
