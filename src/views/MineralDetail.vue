@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentMineral">
+  <div v-if="isAvailable && currentMineral">
     <h2>{{ currentMineral.name }}</h2>
     <img
       v-if="currentMineral.imageURL"
@@ -9,7 +9,7 @@
     />
     <p>{{ currentMineral.description }}</p>
     <p>${{ currentMineral.price }}</p>
-    <button @click="buyNow" class="buy-now-button">BUY NOW</button>
+    <button @click="purchaseMineral" class="buy-now-button">BUY NOW</button>
   </div>
   <div v-else-if="isLoading">Loading...</div>
   <div v-else>
@@ -19,6 +19,8 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
+import StripeService from "../services/StripeService";
+import { loadStripe } from '@stripe/stripe-js';
 
 export default {
   props: {
@@ -29,12 +31,44 @@ export default {
   },
   computed: {
     ...mapGetters('minerals', ['currentMineral', 'isLoading', 'error']),
+    ...mapGetters(['isAuthenticated', 'getUser']),
+    isAvailable() {
+      return this.currentMineral && this.currentMineral.status == "0";
+    },
   },
   methods: {
     ...mapActions('minerals', ['fetchMineral']),
-    buyNow() {
-      console.log('Initiating purchase for:', this.currentMineral.name);
-      // Here you will integrate with Stripe or another payment processor
+    async purchaseMineral() {
+      try {
+        if (!this.isAuthenticated) {
+          alert('Please log in to proceed with the purchase');
+          return;
+        }
+
+        if (!this.getUser) {
+          console.error('User is not defined');
+          alert('User information is not available. Please log in again.');
+          return;
+        }
+
+        if (!this.currentMineral) {
+          console.error('Mineral is not defined');
+          alert('Mineral information is not available. Please try again later.');
+          return;
+        }
+        const stripePublishableKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY;
+        const purchaseData = {
+          userId: this.getUser.id,
+          mineralId: this.currentMineral.id,
+          // You can omit the fields that are not needed
+        };
+        const sessionId = await StripeService.createCheckoutSession(purchaseData);
+        const stripe = await loadStripe(stripePublishableKey);
+        await stripe.redirectToCheckout({ sessionId });
+      } catch (error) {
+        console.error('Error initiating purchase:', error);
+        alert('Failed to initiate purchase. Please try again later.');
+      }
     },
   },
   watch: {
@@ -56,7 +90,7 @@ export default {
       }
     } catch (error) {
       console.error('Error in created hook:', error);
-      this.$router.push("/");
+      this.$router.push("/home");
     }
   },
 };
