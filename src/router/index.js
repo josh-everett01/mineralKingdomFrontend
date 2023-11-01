@@ -8,8 +8,9 @@ import Register from "../components/Register.vue"
 // import UserProfile from '../views/UserProfile.vue';
 import Login from "../views/Login.vue";
 import VerifyEmail from "../views/VerifyEmail.vue";
-import MineralsPage from "../components/MineralsPage.vue"
-import MineralDetail from "../views/MineralDetail.vue"
+import MineralsPage from "../components/MineralsPage.vue";
+import MineralDetail from "../views/MineralDetail.vue";
+import PaymentSuccess from "../views/PaymentSuccess.vue";
 // import Cart from '../views/Cart.vue';
 
 Vue.use(VueRouter);
@@ -40,6 +41,12 @@ const routes = [
     name: "mineral-detail",
     component: MineralDetail,
     props: true, // This ensures that the :id param is passed as a prop to the component
+  },
+  {
+    path: '/payment-success/:orderId',
+    name: 'PaymentSuccess',
+    component: PaymentSuccess,
+    props: true,
   },
   // {
   //   path: "/shop",
