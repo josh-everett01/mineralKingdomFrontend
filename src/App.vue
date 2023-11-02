@@ -18,6 +18,9 @@ export default {
     Header,
     MainImage,
   },
+  created() {
+    this.$store.dispatch('minerals/fetchMinerals');
+  },
 };
 </script>
 

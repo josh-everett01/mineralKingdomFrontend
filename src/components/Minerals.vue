@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Minerals</h2>
-    <div v-for="mineral in minerals" :key="mineral.id">
+    <div v-for="mineral in availableMinerals" :key="mineral.id">
       <img
         v-if="mineral.imageURL"
         :src="mineral.imageURL"
@@ -14,22 +14,15 @@
   </div>
 </template>
 
-
 <script>
-import MineralService from '../services/MineralService';
+import { mapGetters } from 'vuex';
 
 export default {
-  data() {
-    return {
-      minerals: [],
-    };
+  computed: {
+    ...mapGetters('minerals', ['availableMinerals']),
   },
   async created() {
-    try {
-      this.minerals = await MineralService.getMinerals();
-    } catch (error) {
-      console.error('Error fetching minerals:', error);
-    }
+    this.$store.dispatch('minerals/fetchMinerals');
   },
 };
 </script>

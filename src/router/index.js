@@ -11,11 +11,16 @@ import VerifyEmail from "../views/VerifyEmail.vue";
 import MineralsPage from "../components/MineralsPage.vue";
 import MineralDetail from "../views/MineralDetail.vue";
 import PaymentSuccess from "../views/PaymentSuccess.vue";
+import store from '../store/index';
 // import Cart from '../views/Cart.vue';
 
 Vue.use(VueRouter);
 
 const routes = [
+  {
+    path: '/',
+    redirect: '/home'
+  },
   {
     path: "/home",
     name: "home",
@@ -86,5 +91,20 @@ const router = new VueRouter({
   base: process.env.BASE_URL,
   routes,
 });
+
+router.beforeEach((to, from, next) => {
+  // Check if the minerals need to be fetched
+  if (store.getters['minerals/availableMinerals'].length === 0) {
+    store.dispatch('minerals/fetchMinerals')
+      .then(() => next())
+      .catch((error) => {
+        console.error('Error fetching minerals:', error);
+        next();
+      });
+  } else {
+    next();
+  }
+});
+
 
 export default router;

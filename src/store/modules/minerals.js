@@ -1,4 +1,4 @@
-import MineralService from '../../services/MineralService';
+import MineralService from "../../services/MineralService";
 
 export default {
   namespaced: true,
@@ -11,6 +11,10 @@ export default {
   mutations: {
     SET_MINERALS(state, minerals) {
       state.minerals = minerals;
+    },
+    CLEAR_MINERALS(state) {
+      state.minerals = [];
+      state.currentMineral = null;
     },
     SET_CURRENT_MINERAL(state, mineral) {
       console.log("Setting current mineral:", mineral);
@@ -26,19 +30,39 @@ export default {
   actions: {
     async fetchMineral({ commit }, mineralId) {
       try {
-        commit('SET_LOADING', true);
+        commit("SET_LOADING", true);
         const mineral = await MineralService.getMineral(mineralId);
-        commit('SET_CURRENT_MINERAL', mineral);
-        commit('SET_ERROR', null);
+        commit("SET_CURRENT_MINERAL", mineral);
+        commit("SET_ERROR", null);
       } catch (error) {
-        console.error('Error fetching mineral:', error);
-        commit('SET_ERROR', 'Failed to load mineral');
+        console.error("Error fetching mineral:", error);
+        commit("SET_ERROR", "Failed to load mineral");
       } finally {
-        commit('SET_LOADING', false);
+        commit("SET_LOADING", false);
       }
+    },
+    async fetchMinerals({ commit }) {
+      try {
+        commit("SET_LOADING", true);
+        const minerals = await MineralService.getMinerals();
+        console.log(minerals)
+        commit("SET_MINERALS", minerals);
+        commit("SET_ERROR", null);
+      } catch (error) {
+        console.error("Error fetching minerals:", error);
+        commit("SET_ERROR", "Failed to load minerals");
+      } finally {
+        commit("SET_LOADING", false);
+      }
+    },
+    clearMinerals({ commit }) {
+      commit("CLEAR_MINERALS");
     },
   },
   getters: {
+    availableMinerals: (state) => {
+      return state.minerals.filter(mineral => mineral.status === 0);
+    },
     currentMineral: (state) => state.currentMineral,
     isLoading: (state) => state.loading,
     error: (state) => state.error,

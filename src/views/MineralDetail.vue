@@ -18,42 +18,44 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters } from "vuex";
 import StripeService from "../services/StripeService";
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe } from "@stripe/stripe-js";
 
 export default {
   props: {
     id: {
       type: [String, Number],
-      required: true
-    }
+      required: true,
+    },
   },
   computed: {
-    ...mapGetters('minerals', ['currentMineral', 'isLoading', 'error']),
-    ...mapGetters(['isAuthenticated', 'getUser']),
+    ...mapGetters("minerals", ["currentMineral", "isLoading", "error"]),
+    ...mapGetters(["isAuthenticated", "getUser"]),
     isAvailable() {
       return this.currentMineral && this.currentMineral.status == "0";
     },
   },
   methods: {
-    ...mapActions('minerals', ['fetchMineral']),
+    ...mapActions("minerals", ["fetchMineral"]),
     async purchaseMineral() {
       try {
         if (!this.isAuthenticated) {
-          alert('Please log in to proceed with the purchase');
+          alert("Please log in to proceed with the purchase");
           return;
         }
 
         if (!this.getUser) {
-          console.error('User is not defined');
-          alert('User information is not available. Please log in again.');
+          console.error("User is not defined");
+          alert("User information is not available. Please log in again.");
           return;
         }
 
         if (!this.currentMineral) {
-          console.error('Mineral is not defined');
-          alert('Mineral information is not available. Please try again later.');
+          console.error("Mineral is not defined");
+          alert(
+            "Mineral information is not available. Please try again later."
+          );
           return;
         }
         const stripePublishableKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY;
@@ -62,12 +64,18 @@ export default {
           mineralId: this.currentMineral.id,
           // You can omit the fields that are not needed
         };
-        const sessionId = await StripeService.createCheckoutSession(purchaseData);
+        console.log(
+          "Purchase Data: " + purchaseData.userId + "," + purchaseData.mineralId
+        );
+        const sessionId = await StripeService.createCheckoutSession(
+          purchaseData
+        );
+        console.log("SessionID: " + sessionId);
         const stripe = await loadStripe(stripePublishableKey);
         await stripe.redirectToCheckout({ sessionId });
       } catch (error) {
-        console.error('Error initiating purchase:', error);
-        alert('Failed to initiate purchase. Please try again later.');
+        console.error("Error initiating purchase:", error);
+        alert("Failed to initiate purchase. Please try again later.");
       }
     },
   },
@@ -79,17 +87,17 @@ export default {
           this.$router.push("/");
         }, 10000);
       }
-    }
+    },
   },
   async created() {
     try {
       await this.fetchMineral(this.id);
       if (this.error) {
-        console.error('Error loading mineral details:', this.error);
+        console.error("Error loading mineral details:", this.error);
         this.$router.push("/");
       }
     } catch (error) {
-      console.error('Error in created hook:', error);
+      console.error("Error in created hook:", error);
       this.$router.push("/home");
     }
   },

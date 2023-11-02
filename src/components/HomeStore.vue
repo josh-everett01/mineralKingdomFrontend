@@ -3,7 +3,7 @@
     <h2>Featured Minerals</h2>
     <div class="minerals-container">
       <MineralCard
-        v-for="mineral in featuredMinerals"
+        v-for="mineral in availableMinerals"
         :key="mineral.id"
         :mineral="mineral"
       />
@@ -12,25 +12,18 @@
 </template>
 
 <script>
-import axios from 'axios';
-import MineralCard from './MineralCard.vue';
+import { mapGetters } from "vuex";
+import MineralCard from "./MineralCard.vue";
 
 export default {
   components: {
     MineralCard,
   },
-  data() {
-    return {
-      featuredMinerals: [],
-    };
+  computed: {
+    ...mapGetters("minerals", ["availableMinerals"]),
   },
-  async created() {
-    try {
-      const response = await axios.get('https://localhost:7240/api/Minerals');
-      this.featuredMinerals = response.data; // Assuming all minerals are featured for now
-    } catch (error) {
-      console.error('Error fetching minerals:', error);
-    }
+  created() {
+    this.$store.dispatch("minerals/fetchMinerals");
   },
 };
 </script>

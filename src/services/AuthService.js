@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "../axios-config";
 
 const apiClient = axios.create({
   baseURL: "https://localhost:7240/api",
@@ -12,11 +12,14 @@ const apiClient = axios.create({
 export default {
   login(credentials) {
     return apiClient.post("/User/login", credentials)
+      .then(response => {
+        console.log("Login API response:", response.data);
+        return response.data;
+      });
   },
   register(credentials) {
     return apiClient.post("/User/register", credentials)
   },
-  // In AuthService.js
   verifyEmail(token) {
     return apiClient.post("/User/verify-email", JSON.stringify(token), {
       headers: {
@@ -24,4 +27,14 @@ export default {
       },
     });
   },
+  refreshToken() {
+    return apiClient.post("/User/refresh-token");
+  },
+  logout(token) {
+    return apiClient.post("/User/logout", {}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  }
 };
