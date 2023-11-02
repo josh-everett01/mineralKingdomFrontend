@@ -6,6 +6,7 @@ class MineralService {
   async getMinerals() {
     try {
       const response = await axios.get(API_URL + "Minerals");
+      console.log(response)
       return response.data;
     } catch (error) {
       console.error("Error fetching minerals:", error);

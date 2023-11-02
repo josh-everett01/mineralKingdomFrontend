@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import AuthService from "@/services/AuthService";
+import AuthService from "../services/AuthService";
 import { mapActions } from "vuex";
 
 export default {
@@ -40,18 +40,18 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        const response = await AuthService.login(this.credentials);
-        console.log("Login response:", response);
-        this.setUser(response.data);
+        const userData = await AuthService.login(this.credentials);
+        console.log("Login response:", userData);
+        this.$store.dispatch('setUser', userData);
         this.$router.push({ name: "home" });
       } catch (error) {
         console.error("Login failed", error);
-        this.error =
-          "Login failed. Please check your credentials and try again.";
+        this.error = "Login failed. Please check your credentials and try again.";
       } finally {
         this.loading = false;
       }
     },
+
     closeModal() {
       this.$router.go(-1); // Go back to the previous page
     },

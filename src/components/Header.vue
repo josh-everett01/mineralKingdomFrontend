@@ -26,24 +26,25 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
+//import AuthService from "../services/AuthService";
+
 export default {
   data() {
     return {
-      // Add any necessary data properties here
+
     };
   },
   computed: {
-    ...mapGetters(['isAuthenticated', 'getUser']),
+    ...mapGetters(["isAuthenticated", "getUser"]),
     user() {
       return this.getUser || {};
     }
   },
   methods: {
     ...mapActions(['setUser']),
-    logout() {
-      this.$store.dispatch('setUser', null);
-      this.$router.push({ name: '/' });
-    }
+    async logout() {
+      await this.$store.dispatch('logout');
+    },
   }
 };
 </script>
