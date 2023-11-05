@@ -15,14 +15,14 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from "vuex";
 
 export default {
   computed: {
-    ...mapGetters('minerals', ['availableMinerals']),
+    ...mapGetters("minerals", ["availableMinerals"]),
   },
   async created() {
-    this.$store.dispatch('minerals/fetchMinerals');
+    this.$store.dispatch("minerals/fetchMinerals");
   },
 };
 </script>

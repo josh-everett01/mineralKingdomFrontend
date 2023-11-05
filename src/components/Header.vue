@@ -4,6 +4,7 @@
       <nav class="navigation">
         <router-link to="/home">Home</router-link>
         <router-link to="/shop">Shop</router-link>
+        <router-link v-if="isAdmin" to="/admin">Admin Dashboard</router-link>
         <router-link to="/auctions">Auctions</router-link>
         <router-link to="/contact">Contact Us</router-link>
       </nav>
@@ -25,27 +26,29 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters } from "vuex";
 //import AuthService from "../services/AuthService";
 
 export default {
   data() {
-    return {
-
-    };
+    return {};
   },
   computed: {
     ...mapGetters(["isAuthenticated", "getUser"]),
     user() {
       return this.getUser || {};
-    }
+    },
+    isAdmin() {
+      // Access the store getter to check if the user is an admin
+      return this.$store.getters.isAdmin;
+    },
   },
   methods: {
-    ...mapActions(['setUser']),
+    ...mapActions(["setUser"]),
     async logout() {
-      await this.$store.dispatch('logout');
+      await this.$store.dispatch("logout");
     },
-  }
+  },
 };
 </script>
 
@@ -77,8 +80,8 @@ export default {
   justify-content: space-between;
 }
 
-.welcomeUser {
-}
+/* .welcomeUser {
+} */
 
 .user-area {
   display: flex;
@@ -91,8 +94,8 @@ user-area a
   cursor: pointer;
   text-decoration: underline;
 }
-img {
-  /* margin-top: -5%; */
-  /* margin-bottom: -10%; */
-}
+/* img {
+  margin-top: -5%; 
+  margin-bottom: -10%;
+} */
 </style>

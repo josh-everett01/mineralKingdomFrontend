@@ -45,7 +45,7 @@ export default {
       try {
         commit("SET_LOADING", true);
         const minerals = await MineralService.getMinerals();
-        console.log(minerals)
+        console.log(minerals);
         commit("SET_MINERALS", minerals);
         commit("SET_ERROR", null);
       } catch (error) {
@@ -61,7 +61,7 @@ export default {
   },
   getters: {
     availableMinerals: (state) => {
-      return state.minerals.filter(mineral => mineral.status === 0);
+      return state.minerals.filter((mineral) => mineral.status === 0);
     },
     currentMineral: (state) => state.currentMineral,
     isLoading: (state) => state.loading,
