@@ -21,11 +21,13 @@ export default new Vuex.Store({
   state: {
     user: null,
     registrationMessage: null,
+    role: null,
   },
   mutations: {
     SET_USER(state, user) {
       console.log("Setting user:", user);
       state.user = user;
+      state.role = user?.userRole;
     },
     SET_REGISTRATION_MESSAGE(state, message) {
       console.log("Mutation - Setting registration message:", message);
@@ -62,7 +64,7 @@ export default new Vuex.Store({
         dispatch("minerals/clearMinerals", null, { root: true });
         // location.reload();
         console.log(location.pathname);
-        if (location.pathname !== "/home") {
+        if (location.pathname != "/home") {
           router.push("/home");
         }
       } catch (error) {
@@ -96,6 +98,9 @@ export default new Vuex.Store({
     },
     getUser(state) {
       return state.user;
+    },
+    isAdmin(state) {
+      return state.user && state.user.userRole === 1;
     },
     getRegistrationMessage(state) {
       return state.registrationMessage;

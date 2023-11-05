@@ -42,11 +42,17 @@ export default {
       try {
         const userData = await AuthService.login(this.credentials);
         console.log("Login response:", userData);
-        this.$store.dispatch('setUser', userData);
-        this.$router.push({ name: "home" });
+        this.$store.dispatch("setUser", userData);
+        // Check if the user is an admin
+        if (this.$store.getters.isAdmin) {
+          this.$router.push({ name: "admin-dashboard" }); // Redirect to admin dashboard
+        } else {
+          this.$router.push({ name: "home" }); // Redirect to home page
+        }
       } catch (error) {
         console.error("Login failed", error);
-        this.error = "Login failed. Please check your credentials and try again.";
+        this.error =
+          "Login failed. Please check your credentials and try again.";
       } finally {
         this.loading = false;
       }

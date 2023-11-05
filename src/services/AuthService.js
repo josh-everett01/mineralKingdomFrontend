@@ -11,14 +11,13 @@ const apiClient = axios.create({
 
 export default {
   login(credentials) {
-    return apiClient.post("/User/login", credentials)
-      .then(response => {
-        console.log("Login API response:", response.data);
-        return response.data;
-      });
+    return apiClient.post("/User/login", credentials).then((response) => {
+      console.log("Login API response:", response.data);
+      return response.data;
+    });
   },
   register(credentials) {
-    return apiClient.post("/User/register", credentials)
+    return apiClient.post("/User/register", credentials);
   },
   verifyEmail(token) {
     return apiClient.post("/User/verify-email", JSON.stringify(token), {
@@ -31,10 +30,14 @@ export default {
     return apiClient.post("/User/refresh-token");
   },
   logout(token) {
-    return apiClient.post("/User/logout", {}, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+    return apiClient.post(
+      "/User/logout",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    });
-  }
+    );
+  },
 };
