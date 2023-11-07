@@ -61,7 +61,9 @@ export default {
   },
   getters: {
     availableMinerals: (state) => {
-      return state.minerals.filter((mineral) => mineral.status === 0);
+      return state.minerals.filter(
+        (mineral) => (mineral.status == 0) & (mineral.isAuctionItem === false)
+      );
     },
     currentMineral: (state) => state.currentMineral,
     isLoading: (state) => state.loading,

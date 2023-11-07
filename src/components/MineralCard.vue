@@ -55,6 +55,10 @@
 </template>
 
 <script>
+import StripeService from "../services/StripeService";
+import { mapActions, mapGetters } from "vuex";
+import { loadStripe } from "@stripe/stripe-js";
+
 export default {
   props: {
     mineral: Object,
@@ -68,6 +72,8 @@ export default {
     activeImage() {
       return this.allImages[this.activeImageIndex];
     },
+    ...mapGetters("minerals", ["currentMineral", "isLoading", "error"]),
+    ...mapGetters(["isAuthenticated", "getUser"]),
   },
   data() {
     return {
@@ -76,9 +82,46 @@ export default {
     };
   },
   methods: {
-    initiatePurchase(mineralId) {
-      // Logic to initiate purchase
-      this.$router.push({ name: "checkout", params: { mineralId } });
+    ...mapActions("minerals", ["fetchMineral"]),
+    async initiatePurchase() {
+      try {
+        if (!this.isAuthenticated) {
+          alert("Please log in to proceed with the purchase");
+          return;
+        }
+
+        if (!this.getUser) {
+          console.error("User is not defined");
+          alert("User information is not available. Please log in again.");
+          return;
+        }
+
+        if (!this.mineral) {
+          console.error("Mineral is not defined");
+          alert(
+            "Mineral information is not available. Please try again later."
+          );
+          return;
+        }
+        const stripePublishableKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY;
+        const purchaseData = {
+          userId: this.getUser.id,
+          mineralId: this.mineral.id,
+          // You can omit the fields that are not needed
+        };
+        console.log(
+          "Purchase Data: " + purchaseData.userId + "," + purchaseData.mineralId
+        );
+        const sessionId = await StripeService.createCheckoutSession(
+          purchaseData
+        );
+        console.log("SessionID: " + sessionId);
+        const stripe = await loadStripe(stripePublishableKey);
+        await stripe.redirectToCheckout({ sessionId });
+      } catch (error) {
+        console.error("Error initiating purchase:", error);
+        alert("Failed to initiate purchase. Please try again later.");
+      }
     },
     nextImage() {
       if (this.activeImageIndex < this.allImages.length - 1) {
@@ -213,16 +256,6 @@ img {
 
 .next {
   right: 10px;
-}
-
-.gallery-control {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  cursor: pointer;
 }
 
 .prev {

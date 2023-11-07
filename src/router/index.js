@@ -10,10 +10,15 @@ import Login from "../views/Login.vue";
 import VerifyEmail from "../views/VerifyEmail.vue";
 import MineralsPage from "../components/MineralsPage.vue";
 import MineralDetail from "../views/MineralDetail.vue";
+import AuctionDetail from "../views/AuctionDetail.vue";
 import PaymentSuccess from "../views/PaymentSuccess.vue";
 import store from "../store/index";
 import AdminDashboard from "../views/AdminDashboard.vue";
 import AddMineralForm from "../components/AddMineralForm.vue";
+import UpdateAuctionForm from "../components/UpdateAuctionForm.vue";
+import AddAuctionForm from "../components/AddAuctionForm.vue";
+import Shop from "../views/Shop.vue";
+import Auctions from "../views/Auctions.vue";
 // import Cart from '../views/Cart.vue';
 
 Vue.use(VueRouter);
@@ -50,21 +55,27 @@ const routes = [
     props: true, // This ensures that the :id param is passed as a prop to the component
   },
   {
+    path: "/auction/:id",
+    name: "auction-detail",
+    component: AuctionDetail, // Replace with your actual component
+    props: true,
+  },
+  {
     path: "/payment-success/:orderId",
     name: "PaymentSuccess",
     component: PaymentSuccess,
     props: true,
   },
-  // {
-  //   path: "/shop",
-  //   name: "Shop",
-  //   component: Shop,
-  // },
-  // {
-  //   path: "/auctions",
-  //   name: "Auctions",
-  //   component: Auctions,
-  // },
+  {
+    path: "/shop",
+    name: "Shop",
+    component: Shop,
+  },
+  {
+    path: "/auctions",
+    name: "Auctions",
+    component: Auctions,
+  },
   // {
   //   path: "/products/:id",
   //   name: "ProductDetail",
@@ -93,17 +104,46 @@ const routes = [
       if (store.getters.isAdmin) {
         next();
       } else {
-        next("/"); // Redirect to home page or login page if not admin
+        next("/login"); // Redirect to login page if not admin
+      }
+    }
+  },
+  {
+    path: "/admin/add-mineral",
+    component: AddMineralForm,
+    name: "admin-add-mineral",
+    beforeEnter(to, from, next) {
+      if (store.getters.isAdmin) {
+        next();
+      } else {
+        next("/login");
       }
     },
-    children: [
-      {
-        path: "add-mineral",
-        component: AddMineralForm,
-        name: "add-mineral",
-      },
-      // ... other admin routes
-    ],
+  },
+  {
+    path: "/admin/add-auction",
+    component: AddAuctionForm,
+    name: "admin-add-auction",
+    beforeEnter(to, from, next) {
+      if (store.getters.isAdmin) {
+        next();
+      } else {
+        next("/login");
+      }
+    },
+  },
+  {
+    path: "/admin/update-auction/:id",
+    component: UpdateAuctionForm,
+    name: "admin-update-auction",
+    props: true,
+    beforeEnter(to, from, next) {
+      if (store.getters.isAdmin) {
+        next();
+      } else {
+        next("/login");
+      }
+    },
   },
 ];
 
