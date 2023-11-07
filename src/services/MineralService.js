@@ -6,7 +6,10 @@ class MineralService {
   async getMinerals() {
     try {
       const response = await axios.get(API_URL + "Minerals");
-      console.log(response);
+      response.data.forEach(element => {
+        console.log(element);
+      });
+      console.log("Response: " + response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching minerals:", error);
@@ -26,6 +29,7 @@ class MineralService {
   }
   async addMineral(mineralData) {
     try {
+      console.log(mineralData);
       // Ensure the status field is set to a valid value
       mineralData.status = mineralData.status === "Available" ? 0 : 1; // Convert status to the expected integer value
       console.log("Mineral Data:", mineralData); // Make sure to log objects, not concatenate them as strings

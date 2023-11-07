@@ -1,7 +1,14 @@
 <template>
   <div class="add-mineral-form">
-    <div v-if="showSuccessMessage" class="success-message">
-      {{ successMessage }}
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <!-- Modal message -->
+        <p>{{ successMessage }}</p>
+        <!-- Close button -->
+        <button class="modal-close-button" @click="closeAndRefresh">
+          Close
+        </button>
+      </div>
     </div>
     <h3>Add New Mineral</h3>
     <form @submit.prevent="submitForm">
@@ -37,6 +44,13 @@
         <input v-model="mineral.videoURL" id="videoURL" />
       </div>
       <div class="form-group">
+        <label>Is "For Sale" piece or Is "Auction" Piece:</label>
+        <select v-model="mineral.isAuctionItem">
+          <option value="false">Is "For Sale" Piece</option>
+          <option value="true">Is "Auction" Piece</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Status:</label>
         <select v-model="mineral.status">
           <option value="Available">Available</option>
@@ -70,6 +84,8 @@
 </template>
 
 <script>
+import MineralService from '../services/MineralService';
+
 export default {
   data() {
     return {
@@ -81,16 +97,23 @@ export default {
         imageURL: "",
         videoURL: "",
         status: "Available",
+        isAuctionItem: false,
         imageURLs: [""],
       },
-      showSuccessMessage: false,
+      showModal: false,
       successMessage: "",
     };
   },
   methods: {
     addImageUrl() {
-      console.log(this.mineral.imageURLs);
       this.mineral.imageURLs.push("");
+    },
+    closeModal() {
+      this.showModal = false; // Set showModal to false to hide the modal
+    },
+    closeAndRefresh() {
+      this.showModal = false; // Close the modal
+      window.location.reload(); // Refresh the page
     },
     shouldShowRemoveButton() {
       return this.mineral.imageURLs.length > 1;
@@ -108,14 +131,18 @@ export default {
         origin: "",
         imageURL: "",
         videoURL: "",
+        isAuctionItem: false,
         status: "Available",
         imageURLs: [""],
       };
     },
     async submitForm() {
       try {
-        // ... (submit logic)
-        console.log("Mineral added successfully");
+        this.mineral.isAuctionItem = this.mineral.isAuctionItem === 'true';
+        console.log("this mineral" + this.mineral.isAuctionItem)
+        const addedMineral = await MineralService.addMineral(this.mineral);
+        console.log("Mineral added successfully", addedMineral);
+        this.showModal = true;
         this.successMessage = `Mineral "${this.mineral.name}" added successfully!`; // Set the success message
         this.showSuccessMessage = true; // Show the success message
         this.resetForm(); // Reset the form
@@ -134,6 +161,32 @@ add-mineral-form {
   max-width: 500px;
   margin: 0 auto;
 }
+
+.modal-close-button {
+  padding: 10px 20px;
+  margin-top: 20px; /* Add some space above the button */
+  background-color: #5cb85c;
+  color: white;
+  border: none;
+  border-radius: 20px; /* Rounded corners */
+  cursor: pointer;
+  outline: none;
+  display: block; /* Block level element */
+  margin-left: auto;
+  margin-right: auto; /* Center the button */
+}
+
+.modal-close-button:hover {
+  background-color: #4cae4c;
+}
+
+/* .close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 30px;
+  cursor: pointer;
+} */
 
 .form-group {
   margin-bottom: 20px;
@@ -176,5 +229,27 @@ button:hover {
   color: green;
   margin-top: 20px;
   font-weight: bold;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* High z-index to be on top of other content */
+}
+
+.modal-content {
+  position: relative;
+  background-color: #fff;
+  padding: 20px;
+  padding-bottom: 60px;
+  border-radius: 5px;
+  z-index: 1001; /* Higher z-index than overlay to be above it */
 }
 </style>

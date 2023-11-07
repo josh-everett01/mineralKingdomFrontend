@@ -1,0 +1,52 @@
+import axios from "axios";
+
+const API_URL = "https://localhost:7240/api/";
+
+class BidService {
+  async createBid(bidData) {
+    try {
+      const response = await axios.post(API_URL + "Bid", bidData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating bid:", error);
+      throw error;
+    }
+  }
+
+  async getCurrentWinningBidForAuction(auctionId) {
+    try {
+      const response = await axios.get(
+        API_URL + "Auction/" + auctionId + "/winning-bid"
+      );
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching current winning bid:", error);
+      throw error;
+    }
+  }
+
+  async updateBid(bidId, bidData) {
+    try {
+      const response = await axios.put(API_URL + "Bid/" + bidId, bidData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating bid:", error);
+      throw error;
+    }
+  }
+
+  async deleteBid(bidId) {
+    try {
+      const response = await axios.delete(API_URL + "Bid/" + bidId);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting bid:", error);
+      throw error;
+    }
+  }
+
+  // Add other methods as needed
+}
+
+export default new BidService();
