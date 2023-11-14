@@ -3,6 +3,8 @@ import Vue from "vue";
 import Vuex from "vuex";
 import createPersistedState from "vuex-persistedstate";
 import minerals from "../store/modules/minerals";
+import auctions from "./modules/auctions";
+import cart from "./modules/cart";
 import MineralService from "../services/MineralService";
 import AuthService from "../services/AuthService";
 import router from "../router";
@@ -17,6 +19,8 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   modules: {
     minerals,
+    auctions,
+    cart,
   },
   state: {
     user: null,

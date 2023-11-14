@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import MineralService from '../services/MineralService';
+import MineralService from "../services/MineralService";
 
 export default {
   data() {
@@ -138,8 +138,8 @@ export default {
     },
     async submitForm() {
       try {
-        this.mineral.isAuctionItem = this.mineral.isAuctionItem === 'true';
-        console.log("this mineral" + this.mineral.isAuctionItem)
+        this.mineral.isAuctionItem = this.mineral.isAuctionItem === "true";
+        console.log("this mineral" + this.mineral.isAuctionItem);
         const addedMineral = await MineralService.addMineral(this.mineral);
         console.log("Mineral added successfully", addedMineral);
         this.showModal = true;

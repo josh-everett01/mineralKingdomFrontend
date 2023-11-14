@@ -6,7 +6,7 @@ class MineralService {
   async getMinerals() {
     try {
       const response = await axios.get(API_URL + "Minerals");
-      response.data.forEach(element => {
+      response.data.forEach((element) => {
         console.log(element);
       });
       console.log("Response: " + response.data);
@@ -38,6 +38,24 @@ class MineralService {
       return response.data;
     } catch (error) {
       console.error("Error adding mineral:", error);
+      throw error;
+    }
+  }
+
+  async checkMineralAvailability(mineralIds) {
+    try {
+      const availableMinerals = [];
+
+      for (const id of mineralIds) {
+        const mineral = await this.getMineral(id);
+        if (mineral.status !== 1) {
+          availableMinerals.push(id);
+        }
+      }
+
+      return availableMinerals;
+    } catch (error) {
+      console.error("Error checking mineral availability:", error);
       throw error;
     }
   }

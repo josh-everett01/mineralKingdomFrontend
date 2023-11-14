@@ -22,6 +22,7 @@ export default {
     ...mapGetters("minerals", ["availableMinerals"]),
   },
   async created() {
+    console.log("Live from minerals");
     this.$store.dispatch("minerals/fetchMinerals");
   },
 };

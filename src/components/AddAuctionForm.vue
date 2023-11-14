@@ -87,7 +87,7 @@ export default {
         startTime: "",
         endTime: "",
         mineralId: null,
-        auctionStatusId: null
+        auctionStatusId: null,
       },
       mineralsForAuction: [],
       showSuccessMessage: false,
@@ -103,7 +103,9 @@ export default {
         // Fetch all minerals from your service
         const minerals = await MineralService.getMinerals();
         // Filter minerals to only those that are for auction
-        this.mineralsForAuction = minerals.filter(mineral => mineral.isAuctionItem);
+        this.mineralsForAuction = minerals.filter(
+          (mineral) => mineral.isAuctionItem
+        );
       } catch (error) {
         console.error("Error fetching minerals:", error);
       }
@@ -124,7 +126,7 @@ export default {
         startTime: "",
         endTime: "",
         mineralId: null,
-        auctionStatusId: null
+        auctionStatusId: null,
       };
     },
     async submitForm() {
@@ -152,13 +154,13 @@ export default {
   },
   watch: {
     watch: {
-      'auction.mineralId': function (newVal, oldVal) {
+      "auction.mineralId": function (newVal, oldVal) {
         if (newVal !== oldVal) {
           this.updateStartingPrice();
         }
       },
     },
-  }
+  },
 };
 </script>
 

@@ -14,7 +14,7 @@
 <script>
 // import { mapGetters } from "vuex";
 import AuctionCard from "./AuctionCard.vue";
-import AuctionService from '../services/AuctionService';
+import AuctionService from "../services/AuctionService";
 
 export default {
   components: {
@@ -33,7 +33,7 @@ export default {
       try {
         const auctions = await AuctionService.getAuctions();
         // Assuming the API returns an array of auctions, filter or select featured auctions as needed
-        console.log(auctions)
+        console.log(auctions);
         this.featuredAuctions = auctions;
       } catch (error) {
         console.error("Error fetching auctions:", error);

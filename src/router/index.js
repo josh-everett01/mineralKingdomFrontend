@@ -12,6 +12,7 @@ import MineralsPage from "../components/MineralsPage.vue";
 import MineralDetail from "../views/MineralDetail.vue";
 import AuctionDetail from "../views/AuctionDetail.vue";
 import PaymentSuccess from "../views/PaymentSuccess.vue";
+import PaymentCancelled from "../views/PaymentCancelled.vue";
 import store from "../store/index";
 import AdminDashboard from "../views/AdminDashboard.vue";
 import AddMineralForm from "../components/AddMineralForm.vue";
@@ -19,7 +20,7 @@ import UpdateAuctionForm from "../components/UpdateAuctionForm.vue";
 import AddAuctionForm from "../components/AddAuctionForm.vue";
 import Shop from "../views/Shop.vue";
 import Auctions from "../views/Auctions.vue";
-// import Cart from '../views/Cart.vue';
+import Cart from "../views/Cart.vue";
 
 Vue.use(VueRouter);
 
@@ -67,6 +68,12 @@ const routes = [
     props: true,
   },
   {
+    path: "/payment-cancelled/:orderId",
+    name: "PaymentCancelled",
+    component: PaymentCancelled,
+    props: true,
+  },
+  {
     path: "/shop",
     name: "Shop",
     component: Shop,
@@ -91,11 +98,11 @@ const routes = [
     name: "Login",
     component: Login,
   },
-  // {
-  //   path: "/cart",
-  //   name: "Cart",
-  //   component: Cart,
-  // },
+  {
+    path: "/cart",
+    name: "Cart",
+    component: Cart,
+  },
   {
     path: "/admin",
     component: AdminDashboard,
@@ -106,7 +113,7 @@ const routes = [
       } else {
         next("/login"); // Redirect to login page if not admin
       }
-    }
+    },
   },
   {
     path: "/admin/add-mineral",

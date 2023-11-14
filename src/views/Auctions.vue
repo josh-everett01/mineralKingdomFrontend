@@ -1,40 +1,82 @@
 <template>
   <div class="auctions-page">
     <h1>Auctions</h1>
-    <div class="auctions-container">
-      <AuctionCard
-        v-for="auction in allAuctions"
-        :key="auction.id"
-        :auction="auction"
-      />
-    </div>
+    <section>
+      <h2>Current Auctions</h2>
+      <div class="auctions-container">
+        <AuctionCard
+          v-for="auction in currentAuctions"
+          :key="auction.id"
+          :auction="auction"
+        />
+      </div>
+    </section>
+    <section>
+      <h2>Future Auctions</h2>
+      <div class="auctions-container">
+        <AuctionCard
+          v-for="auction in futureAuctions"
+          :key="auction.id"
+          :auction="auction"
+        />
+      </div>
+    </section>
+    <section>
+      <h2>Past Auctions</h2>
+      <div class="auctions-container">
+        <AuctionCard
+          v-for="auction in pastAuctions"
+          :key="auction.id"
+          :auction="auction"
+        />
+      </div>
+    </section>
   </div>
 </template>
 
 <script>
 import AuctionCard from "../components/AuctionCard.vue";
-import AuctionService from "../services/AuctionService";
+import { mapActions, mapGetters } from "vuex";
 
 export default {
   components: {
     AuctionCard,
   },
-  data() {
-    return {
-      allAuctions: [],
-    };
+  computed: {
+    ...mapGetters("auctions", ["allAuctions"]),
+    currentAuctions() {
+      const now = new Date();
+      console.log("Current time:", now.toISOString());
+
+      return this.allAuctions.filter((auction) => {
+        const startTime = new Date(auction.startTime);
+        const endTime = new Date(auction.endTime);
+
+        return startTime <= now && endTime > now;
+      });
+    },
+    futureAuctions() {
+      const now = new Date();
+      return this.allAuctions.filter(
+        (auction) => new Date(auction.startDate) > now
+      );
+    },
+    pastAuctions() {
+      const now = new Date();
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(now.getDate() - 10);
+
+      return this.allAuctions.filter((auction) => {
+        const endDate = new Date(auction.endTime);
+        return endDate <= now && endDate > tenDaysAgo;
+      });
+    },
   },
   created() {
-    this.fetchAllAuctions();
+    this.fetchAuctions();
   },
   methods: {
-    async fetchAllAuctions() {
-      try {
-        this.allAuctions = await AuctionService.getAuctions();
-      } catch (error) {
-        console.error("Error fetching auctions:", error);
-      }
-    },
+    ...mapActions("auctions", ["fetchAuctions"]),
   },
 };
 </script>

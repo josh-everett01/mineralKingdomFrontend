@@ -47,8 +47,8 @@
         class="button view-details"
         >View Details</router-link
       >
-      <button @click="initiatePurchase(mineral.id)" class="button buy-now">
-        Buy Now
+      <button @click="addToCart(mineral)" class="button add-to-cart">
+        Add to Cart
       </button>
     </div>
   </div>
@@ -140,6 +140,22 @@ export default {
     setActiveImage(index) {
       this.activeImageIndex = index;
     },
+    addToCart(mineral) {
+      if (!this.isAuthenticated) {
+        alert("Please log in to add items to the cart");
+        return;
+      }
+
+      const cartItem = {
+        id: mineral.id,
+        name: mineral.name,
+        price: mineral.price,
+        // Add other necessary properties
+      };
+
+      this.$store.dispatch("cart/addToCart", cartItem);
+      alert("Item added to cart successfully!");
+    },
   },
 };
 </script>
@@ -188,7 +204,7 @@ img {
   border: none; */
 }
 
-.buy-now {
+.add-to-cart {
   background-color: black;
   /* color: white;
   border: none; */
