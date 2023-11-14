@@ -83,7 +83,8 @@ export default {
         const fetchedAuctions = await AuctionService.getAuctions();
         this.auctions = await Promise.all(
           fetchedAuctions.map(async (auction) => {
-            const currentHighestBid = await BidService.getCurrentWinningBidForAuction(auction.id);
+            const currentHighestBid =
+              await BidService.getCurrentWinningBidForAuction(auction.id);
             auction.currentHighestBid = currentHighestBid;
             console.log("Current Highest Bid: " + auction.currentHighestBid);
             return auction;

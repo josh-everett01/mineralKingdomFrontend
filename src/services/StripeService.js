@@ -20,6 +20,15 @@ class StripeService {
       throw error;
     }
   }
+  async createCartCheckoutSession(cartData) {
+    try {
+      const response = await axios.post(API_URL + "checkout", cartData);
+      return response.data.sessionId;
+    } catch (error) {
+      console.error("Error creating cart checkout session:", error);
+      throw error;
+    }
+  }
 }
 
 export default new StripeService();

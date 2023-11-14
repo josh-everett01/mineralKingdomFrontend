@@ -43,20 +43,37 @@
     <p>{{ auction.description }}</p>
     <div class="auction-details">
       <span>Starting Price: ${{ auction.startingPrice }}</span>
-      <span>Ends on: {{ new Date(auction.endTime).toLocaleString() }}</span>
+      <div
+        v-if="!auctionHasEnded && currentHighestBid"
+        class="current-highest-bid"
+      >
+        <p>Current Highest Bid: ${{ currentHighestBid.amount.toFixed(2) }}</p>
+      </div>
+      <div v-if="auctionHasEnded && currentHighestBid">
+        <p>
+          Winning Bid: ${{
+            currentHighestBid && currentHighestBid.amount
+              ? currentHighestBid.amount.toFixed(2)
+              : "0.00"
+          }}
+        </p>
+      </div>
+      <span v-if="auctionHasEnded">
+        Ended on: {{ new Date(auction.endTime).toLocaleString() }}
+      </span>
+      <span v-else>
+        Ends on: {{ new Date(auction.endTime).toLocaleString() }}
+      </span>
     </div>
-    <div class="button-container">
+    <div class="button container">
       <router-link
         :to="{ name: 'auction-detail', params: { id: auction.id } }"
         class="button view-details"
       >
         View Details
       </router-link>
-      <button @click.stop="toggleBidding" class="button bid-now">
-        Bid Now
-      </button>
     </div>
-    <div v-if="showBidding" class="bid-section">
+    <!-- <div v-if="showBidding" class="bid-section bid-section-active">
       <div class="bid-section">
         <span v-if="currentHighestBid">
           Current Bid: ${{ currentHighestBid.amount }}
@@ -74,8 +91,7 @@
         />
         <button @click="placeBid" class="bid-button">Bid</button>
       </div>
-      <!-- ... -->
-    </div>
+    </div> -->
     <!-- Add more details and styling as needed -->
   </div>
 </template>
@@ -84,6 +100,7 @@
 // import AuctionService from "../services/AuctionService";
 import MineralService from "../services/MineralService";
 import BidService from "../services/BidService";
+import { mapGetters } from "vuex";
 
 export default {
   props: {
@@ -104,6 +121,9 @@ export default {
     };
   },
   computed: {
+    ...mapGetters({
+      currentUser: "getUser", // This maps this.currentUser to your Vuex getter getUser
+    }),
     allImages() {
       return this.mineral
         ? [this.mineral.imageURL, ...this.mineral.imageURLs].filter(Boolean)
@@ -111,6 +131,9 @@ export default {
     },
     activeImage() {
       return this.allImages[this.activeImageIndex];
+    },
+    auctionHasEnded() {
+      return new Date() > new Date(this.auction.endTime);
     },
   },
   methods: {
@@ -127,14 +150,14 @@ export default {
           // If there is no winning bid, set the current highest bid to null
           this.currentHighestBid = null;
           // You can also set a flag or a message to indicate there are no bids
-          this.noBidsMessage = response.message; // 
+          this.noBidsMessage = response.message;
         }
       } catch (error) {
         console.error("Error fetching current highest bid:", error);
       }
     },
     async fetchMineralData() {
-      console.log("MineralID from AuctionCard: " + this.auction.mineralId)
+      console.log("MineralID from AuctionCard: " + this.auction.mineralId);
       if (this.auction.mineralId) {
         try {
           this.mineral = await MineralService.getMineral(
@@ -147,9 +170,14 @@ export default {
       }
     },
     toggleBidding(event) {
-      event.stopPropagation(); // This will prevent the click from bubbling up
+      event.stopPropagation(); // Prevent click from bubbling up
       this.showBidding = !this.showBidding;
+      console.log(
+        "toggleBidding called, showBidding is now:",
+        this.showBidding
+      );
     },
+
     async placeBid() {
       // Check if there is a current highest bid before comparing amounts
       const minimumBid = this.currentHighestBid
@@ -160,22 +188,25 @@ export default {
         alert(`Your bid must be at least $${minimumBid}.`);
         return;
       }
+      if (this.currentUser) {
+        try {
+          // Await the createBid call without assigning its result to a variable
+          await BidService.createBid({
+            amount: this.newBidAmount,
+            bidTime: new Date().toISOString(),
+            userId: this.currentUser.id,
+            auctionId: this.auction.id,
+          });
 
-      try {
-        // Await the createBid call without assigning its result to a variable
-        await BidService.createBid({
-          amount: this.newBidAmount,
-          bidTime: new Date().toISOString(),
-          userId: 1, // Replace with actual user ID
-          auctionId: this.auction.id,
-        });
-
-        // Update the currentHighestBid with the new bid amount
-        this.currentHighestBid = { amount: this.newBidAmount };
-        this.checkAndExtendAuctionTime();
-      } catch (error) {
-        console.error("Error placing bid:", error);
-        alert("There was an error placing your bid. Please try again.");
+          // Update the currentHighestBid with the new bid amount
+          this.currentHighestBid = { amount: this.newBidAmount };
+          this.checkAndExtendAuctionTime();
+        } catch (error) {
+          console.error("Error placing bid:", error);
+          alert("There was an error placing your bid. Please try again.");
+        }
+      } else {
+        alert("You must be logged in to place a bid.");
       }
     },
     checkAndExtendAuctionTime() {
@@ -238,6 +269,11 @@ export default {
   width: 100%;
   margin-bottom: 10px; /* Add space between buttons and bid section */
 }
+
+.center-button {
+  justify-content: center;
+}
+
 .bid-section {
   transition: max-height 0.3s ease-out;
   overflow: hidden;

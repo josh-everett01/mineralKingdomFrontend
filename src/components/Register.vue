@@ -74,11 +74,11 @@ export default {
         city: "",
         state: "",
         zipCode: "",
-        country: ""
+        country: "",
       },
       error: null,
       loading: false,
-      message: '',
+      message: "",
     };
   },
   methods: {
@@ -88,7 +88,10 @@ export default {
       try {
         const response = await AuthService.register(this.credentials);
         console.log("Registration successful:", response);
-        this.$store.dispatch('setRegistrationMessage', "Registration successful! Please check your email to verify your account.");
+        this.$store.dispatch(
+          "setRegistrationMessage",
+          "Registration successful! Please check your email to verify your account."
+        );
         this.$router.push({ name: "home" });
       } catch (error) {
         console.error("Registration failed:", error);

@@ -1,6 +1,7 @@
 <template>
   <div class="auction-details">
     <!-- Image gallery -->
+    <h2 v-if="auction">{{ (auction.title, auction.i) }}</h2>
     <h3 v-if="mineral">{{ mineral.name }}</h3>
     <div
       v-if="mineral"
@@ -40,18 +41,36 @@
       <source :src="mineral.videoURL" type="video/mp4" />
       Your browser does not support the video tag.
     </video>
+    <div v-if="bids.length" class="bid-list">
+      <h3>Bid History</h3>
+      <ul>
+        <li v-for="(bid, index) in sortedAndLimitedBids" :key="index">
+          ${{ bid.amount.toFixed(2) }} by {{ bid.username }} on
+          {{ formatBidTime(bid.bidTime) }}
+        </li>
+      </ul>
+    </div>
+
     <p v-if="auction">{{ auction.description }}</p>
     <p v-if="!auction">Loading auction details...</p>
-    <div class="auction-info">
-      <span v-if="auction">Starting Price: ${{ auction.startingPrice }}</span>
-      <span v-if="auction"
-        >Ends on: {{ new Date(auction.endTime).toLocaleString() }}</span
-      >
+    <div v-if="auction" class="auction-info">
+      <span v-if="auction && auction.startingPrice">
+        Starting Price: ${{ auction.startingPrice.toFixed(2) }}
+      </span>
+      <span v-if="auction && auctionHasEnded">
+        Started on: {{ new Date(auction.startTime).toLocaleString() }}
+      </span>
     </div>
     <!-- Bidding section -->
-    <div class="bid-section">
-      <span v-if="currentHighestBid">
-        Current Bid: ${{ currentHighestBid.amount }}
+    <div v-if="auction && !auctionHasEnded" class="bid-section">
+      <div v-if="successMessage" class="success-message">
+        {{ successMessage }}
+      </div>
+      <span v-if="currentHighestBid && currentHighestBid.amount">
+        Current Bid: ${{ currentHighestBid.amount.toFixed(2) }}
+      </span>
+      <span v-if="auction && !auctionHasEnded">
+        Auction End: {{ new Date(auction.endTime).toLocaleString() }}
       </span>
       <span v-else>No bids yet</span>
       <input
@@ -69,10 +88,20 @@
       />
       <button @click="placeBid" class="bid-button">Place Bid</button>
     </div>
-    <div class="auction-table">
+    <div v-if="auction && auctionHasEnded" class="auction-ended-section">
+      <h2>Auction Winner</h2>
+      <p>
+        Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
+        {{ currentHighestBid.username }}
+      </p>
+      <p>Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}</p>
+    </div>
+    <!-- <div class="auction-table">
       <div class="table-row">
         <div class="table-cell">Starting Price:</div>
-        <div class="table-cell">${{ auction.startingPrice }}</div>
+        <div class="table-cell">
+          ${{ auction ? `${auction.startingPrice}` : "Loading..." }}
+        </div>
       </div>
       <div class="table-row">
         <div class="table-cell">Current Highest Bid:</div>
@@ -89,7 +118,7 @@
         <div class="table-cell">Auction Ends In:</div>
         <div class="table-cell">{{ countdown }}</div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -98,22 +127,31 @@ import MineralService from "../services/MineralService";
 import BidService from "../services/BidService";
 import AuctionService from "../services/AuctionService";
 import UserService from "../services/UserService";
+import { mapGetters } from "vuex";
 
 export default {
   data() {
     return {
       mineral: null,
+      startingPrice: null,
       activeImageIndex: 0,
       showControls: false,
-      currentHighestBid: null,
       newBidAmount: 0,
       bidIncrement: 10, // Set your required bid increment here
       showBidding: true, // Show bidding section by default
       auction: null,
       countdown: "",
+      currentHighestBid: { amount: 0, username: "" },
+      successMessage: "",
+      bids: [],
     };
   },
   computed: {
+    ...mapGetters(["getUser"]),
+    sortedAndLimitedBids() {
+      // Create a copy of the bids array, sort it, and then slice the last 10
+      return [...this.bids].sort((a, b) => a.amount - b.amount).slice(-10);
+    },
     allImages() {
       return this.mineral
         ? [this.mineral.imageURL, ...this.mineral.imageURLs].filter(Boolean)
@@ -121,6 +159,14 @@ export default {
     },
     activeImage() {
       return this.allImages[this.activeImageIndex];
+    },
+    auctionHasEnded() {
+      if (!this.auction || !this.auction.endTime) {
+        return false;
+      }
+      const now = new Date();
+      const endTime = new Date(this.auction.endTime);
+      return now >= endTime;
     },
   },
   methods: {
@@ -132,11 +178,13 @@ export default {
         );
         if (response && response.winningBid) {
           this.currentHighestBid = response.winningBid;
-          const user = await UserService.getUserById(this.currentHighestBid.userId);
+          const user = await UserService.getUserById(
+            this.currentHighestBid.userId
+          );
           console.log(user);
           this.currentHighestBid.username = user.username;
         } else {
-          this.currentHighestBid = null;
+          this.currentHighestBid = "0.00";
         }
       } catch (error) {
         console.error("Error fetching current highest bid:", error);
@@ -163,20 +211,30 @@ export default {
         alert(`Your bid must be at least $${minimumBid}.`);
         return;
       }
+      if (this.getUser) {
+        try {
+          await BidService.createBid({
+            amount: this.newBidAmount,
+            bidTime: new Date().toISOString(),
+            userId: this.getUser.id, // Replace with actual user ID
+            auctionId: this.auction.id,
+          });
+          this.currentHighestBid = { amount: this.newBidAmount };
+          this.successMessage = `Your bid of $${this.newBidAmount.toFixed(
+            2
+          )} has been placed successfully.`;
 
-      try {
-        await BidService.createBid({
-          amount: this.newBidAmount,
-          bidTime: new Date().toISOString(),
-          userId: 1, // Replace with actual user ID
-          auctionId: this.auction.id,
-        });
+          setTimeout(() => {
+            this.successMessage = "";
+          }, 5000); // Change 5000 to 7000 for 7 seconds
 
-        this.currentHighestBid = { amount: this.newBidAmount };
-        // Optionally, refresh the bid data
-      } catch (error) {
-        console.error("Error placing bid:", error);
-        alert("There was an error placing your bid. Please try again.");
+          this.fetchBidList();
+        } catch (error) {
+          console.error("Error placing bid:", error);
+          alert("There was an error placing your bid. Please try again.");
+        }
+      } else {
+        alert("You must be logged in to place a bid.");
       }
     },
     nextImage() {
@@ -204,12 +262,37 @@ export default {
 
       // Time calculations for days, hours, minutes and seconds
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const hours = Math.floor(
+        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       // Output the result in a string format
       this.countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    },
+    async fetchBidList() {
+      try {
+        const bids = await BidService.getBidsForAuction(this.auction.id);
+        const bidsWithUsernames = await Promise.all(
+          bids.map(async (bid) => {
+            try {
+              const user = await UserService.getUserById(bid.userId);
+              return { ...bid, username: user.username };
+            } catch (error) {
+              console.error("Error fetching user for bid:", error);
+              return { ...bid, username: "Unknown" }; // Fallback in case of error
+            }
+          })
+        );
+        this.bids = bidsWithUsernames;
+      } catch (error) {
+        console.error("Error fetching bids:", error);
+      }
+    },
+    formatBidTime(bidTime) {
+      const date = new Date(bidTime);
+      return date.toLocaleString(); // Adjust formatting as needed
     },
   },
   async created() {
@@ -217,6 +300,7 @@ export default {
     try {
       const auctionData = await AuctionService.getAuction(auctionId);
       this.auction = auctionData; // Set the auction data
+      await this.fetchBidList();
       await this.fetchMineralData(); // Now fetch the mineral data
       await this.fetchCurrentHighestBid(); // And the current highest bid
     } catch (error) {
@@ -335,5 +419,33 @@ export default {
   background-color: #333; /* Match the MineralDetail button hover color */
 }
 
-/* Add any additional styles specific to the AuctionDetails */
+.auction-ended-section {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.success-message {
+  color: green;
+  margin-top: 10px;
+}
+
+.bid-list {
+  margin-top: 20px;
+}
+
+.bid-list h3 {
+  margin-bottom: 10px;
+}
+
+.bid-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.bid-list li {
+  margin-bottom: 5px;
+}
 </style>

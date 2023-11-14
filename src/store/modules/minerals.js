@@ -32,6 +32,7 @@ export default {
       try {
         commit("SET_LOADING", true);
         const mineral = await MineralService.getMineral(mineralId);
+        console.log("Mineral from module : " + mineral);
         commit("SET_CURRENT_MINERAL", mineral);
         commit("SET_ERROR", null);
       } catch (error) {

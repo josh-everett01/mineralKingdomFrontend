@@ -14,7 +14,7 @@
           >Register</router-link
         >
         <a v-if="isAuthenticated" @click="logout">Logout</a>
-        <router-link to="/cart">Cart</router-link>
+        <router-link to="/cart">Cart ({{ cartItemCount }})</router-link>
       </div>
       <div class="welcomeUserContainer">
         <h4 class="welcomeUser" v-if="isAuthenticated">
@@ -41,6 +41,9 @@ export default {
     isAdmin() {
       // Access the store getter to check if the user is an admin
       return this.$store.getters.isAdmin;
+    },
+    cartItemCount() {
+      return this.$store.getters["cart/cartItems"].length;
     },
   },
   methods: {

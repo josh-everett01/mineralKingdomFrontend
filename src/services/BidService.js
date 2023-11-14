@@ -5,6 +5,7 @@ const API_URL = "https://localhost:7240/api/";
 class BidService {
   async createBid(bidData) {
     try {
+      console.log(bidData);
       const response = await axios.post(API_URL + "Bid", bidData);
       return response.data;
     } catch (error) {
@@ -46,7 +47,18 @@ class BidService {
     }
   }
 
-  // Add other methods as needed
+  async getBidsForAuction(auctionId) {
+    try {
+      const response = await axios.get(
+        API_URL + "Auction/" + auctionId + "/bids"
+      );
+      console.log("Bids for auction fetched:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching bids for auction:", error);
+      throw error;
+    }
+  }
 }
 
 export default new BidService();

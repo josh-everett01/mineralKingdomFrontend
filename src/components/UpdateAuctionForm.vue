@@ -64,7 +64,7 @@
 
 <script>
 import AuctionService from "../services/AuctionService";
-import MineralService from '../services/MineralService';
+import MineralService from "../services/MineralService";
 
 export default {
   props: ["id"],
@@ -104,7 +104,9 @@ export default {
     },
     async submitForm() {
       try {
-        this.auctionData.endTime = new Date(this.auctionData.endTime).toISOString();
+        this.auctionData.endTime = new Date(
+          this.auctionData.endTime
+        ).toISOString();
         await AuctionService.updateAuction(this.id, this.auctionData);
         // Handle success (e.g., show a message or redirect to a confirmation page)
       } catch (error) {
