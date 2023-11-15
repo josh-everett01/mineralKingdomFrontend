@@ -50,6 +50,7 @@ export default {
     ...mapActions(["setUser"]),
     async logout() {
       await this.$store.dispatch("logout");
+      await this.$store.dispatch("cart/clearCart");
     },
   },
 };

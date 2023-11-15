@@ -153,7 +153,14 @@ export default {
         // Add other necessary properties
       };
 
-      this.$store.dispatch("cart/addToCart", cartItem);
+      const userId = this.getUser.id; // Get the current user's ID
+      if (!userId) {
+        console.error("User ID is undefined");
+        alert("Unable to add item to cart. Please log in again.");
+        return;
+      }
+
+      this.$store.dispatch("cart/addToCart", { userId, item: cartItem });
       alert("Item added to cart successfully!");
     },
   },

@@ -43,6 +43,10 @@ export default {
         const userData = await AuthService.login(this.credentials);
         console.log("Login response:", userData);
         this.$store.dispatch("setUser", userData);
+
+        // Fetch user-specific cart
+        await this.fetchUserCart(userData.id);
+
         // Check if the user is an admin
         if (this.$store.getters.isAdmin) {
           this.$router.push({ name: "admin-dashboard" }); // Redirect to admin dashboard
@@ -57,9 +61,15 @@ export default {
         this.loading = false;
       }
     },
-
     closeModal() {
       this.$router.go(-1); // Go back to the previous page
+    },
+    async fetchUserCart(userId) {
+      try {
+        await this.$store.dispatch("cart/getCartByUserId", userId);
+      } catch (error) {
+        console.error("Error fetching user cart", error);
+      }
     },
   },
 };

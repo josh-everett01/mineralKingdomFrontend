@@ -11,7 +11,7 @@ class CartService {
     try {
       const response = await axios.get(API_URL + userId);
       // Dispatch action to update cart items in the store
-      store.dispatch("cart/setCartItems", response.data.cartItems);
+      store.commit("cart/SET_CART_ITEMS", response.data.cartItems);
       return response.data;
     } catch (error) {
       this.handleError(error, "Failed to fetch cart");
@@ -57,11 +57,18 @@ class CartService {
     }
   }
 
-  async addItemToCart(userId, cartItemDTO) {
+  async addItemToCart(userId, item) {
     try {
+      console.log("UserId: " + userId);
+      console.log(item);
+      const cartItemDTO = {
+        id: userId, // Ensure this is an integer
+        mineralId: item, // Ensure this is an integer without leading zeros
+      };
+      console.log(cartItemDTO.mineralId);
       const response = await axios.post(
         API_URL + userId + "/items",
-        cartItemDTO
+        cartItemDTO // Pass the cartItemDTO here
       );
       // Dispatch action to add item to cart in the store
       store.dispatch("cart/addToCart", cartItemDTO);
