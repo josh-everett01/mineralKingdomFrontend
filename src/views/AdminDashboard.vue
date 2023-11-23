@@ -33,8 +33,9 @@
                 <p>
                   Highest Bid:
                   {{
-                    auction.currentHighestBid
-                      ? `$${auction.currentHighestBid?.winningBid.amount}`
+                    auction.currentHighestBid &&
+                    auction.currentHighestBid.winningBid
+                      ? `$${auction.currentHighestBid.winningBid.amount}`
                       : "No bids yet"
                   }}
                 </p>
@@ -63,6 +64,7 @@ export default {
   data() {
     return {
       auctions: [],
+
     };
   },
   created() {

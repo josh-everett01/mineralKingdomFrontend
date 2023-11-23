@@ -40,7 +40,7 @@
       Your browser does not support the video tag.
     </video>
     <p>{{ mineral.description }}</p>
-    <p>${{ mineral.price }}</p>
+    <p>${{ mineral.price.toFixed(2) }}</p>
     <div class="button-container">
       <router-link
         :to="{ name: 'mineral-detail', params: { id: mineral.id } }"

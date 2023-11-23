@@ -1,6 +1,6 @@
 <template>
-  <div class="cart-item-card">
-    <h3>{{ item.name }}</h3>
+  <div v-if="mineralData" class="cart-item-card">
+    <h3>{{ mineralData.name }}</h3>
     <!-- Image gallery -->
     <div
       class="image-gallery"
@@ -40,26 +40,36 @@
       <source :src="mineralData.videoURL" type="video/mp4" />
       Your browser does not support the video tag.
     </video>
-    <p>${{ item.price }}</p>
+    <p>${{ this.formattedPrice() }}</p>
     <div class="button-container">
       <button @click="removeFromCart(item.id)" class="button remove-from-cart">
         Remove from Cart
       </button>
     </div>
   </div>
+  <div v-else-if="loadError">
+    <p>Unable to load item details.</p>
+  </div>
+  <div v-else><h1>...Loading</h1></div>
 </template>
 
 <script>
 import MineralService from "../services/MineralService";
+
 export default {
   props: {
-    item: Object,
+    item: {
+      type: Object, // Changed from typeof to type
+      required: true,
+      default: () => ({})
+    }
   },
   data() {
     return {
       activeImageIndex: 0,
       showControls: false,
       mineralData: null,
+      loadError: false,
     };
   },
   computed: {
@@ -73,16 +83,17 @@ export default {
       return [];
     },
     activeImage() {
-      console.log(this.allImages);
       return this.allImages[this.activeImageIndex];
     },
   },
   methods: {
     async loadMineralDetails() {
-      const mineralData = await MineralService.getMineral(this.item.id);
-      // Assuming fetchMineral returns the mineral data
+      if (!this.item.mineralId) {
+        this.loadError = true;
+        return;
+      }
+      const mineralData = await MineralService.getMineral(this.item.mineralId);
       this.mineralData = mineralData;
-      console.log(mineralData);
     },
     prevImage() {
       if (this.activeImageIndex > 0) {
@@ -99,25 +110,16 @@ export default {
       }
     },
     formattedPrice() {
-      // Check if price is a number and return formatted price
-      return !isNaN(parseFloat(this.item.price))
-        ? `$${this.item.price.toFixed(2)}`
+      return !isNaN(parseFloat(this.mineralData.price))
+        ? `${this.mineralData.price.toFixed(2)}`
         : "Price not available";
     },
-    removeFromCart(itemId) {
-      // Emit an event to the parent component
-      console.log("Emitting remove-item event with itemId:", itemId);
-      this.$emit('remove-item', itemId);
+    removeFromCart() {
+      this.$emit("remove-item", this.mineralData.id);
     },
   },
   mounted() {
     this.loadMineralDetails();
-    console.log(
-      "Item price:",
-      this.item.price,
-      "Type:",
-      typeof this.item.price
-    );
   },
   watch: {
     "item.mineralId": function (newVal, oldVal) {
@@ -128,7 +130,6 @@ export default {
   },
 };
 </script>
-
 <style scoped>
 .cart-item-card {
   border: 1px solid #ccc;

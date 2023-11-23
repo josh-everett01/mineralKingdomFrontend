@@ -1,7 +1,10 @@
 <template>
   <div>
     <h2>Your Cart</h2>
-    <div class="cart-items">
+    <div v-if="cartItems.length === 0 || !cartItems.length == undefined">
+      <p>Your cart is empty.</p>
+    </div>
+    <div v-else class="cart-items">
       <CartItem
         v-for="item in cartItems"
         :key="item.id"
@@ -9,8 +12,14 @@
         @remove-item="handleRemoveItem"
       />
     </div>
-    <p>Total: ${{ cartTotal.toFixed(2) }}</p>
-    <button @click="initiateCheckout" class="checkout-button">Checkout</button>
+    <p v-if="cartItems.length > 0">Total: ${{ total }}</p>
+    <button
+      v-if="cartItems.length > 0"
+      @click="initiateCheckout"
+      class="checkout-button"
+    >
+      Checkout
+    </button>
   </div>
 </template>
 
@@ -20,10 +29,16 @@ import { mapGetters, mapActions, mapMutations } from "vuex";
 import StripeService from "../services/StripeService";
 import { loadStripe } from "@stripe/stripe-js";
 import MineralService from "../services/MineralService";
+import CartService from '../services/CartService';
 
 export default {
   components: {
     CartItem,
+  },
+  data() {
+    return {
+      total: "0.00", // Initialize total as a data property
+    };
   },
   computed: {
     ...mapGetters("cart", ["cartItems", "cartTotal"]),
@@ -32,29 +47,54 @@ export default {
   watch: {
     cartItems: {
       deep: true,
-      handler(newItems) {
-        console.log("Cart Items Updated:", newItems);
+      async handler(newItems) {
+        if (newItems.length === 0) {
+          this.total = "0.00";
+        } else {
+          this.total = await this.calculateCartTotal(newItems);
+        }
       },
     },
   },
-  mounted() {
-    console.log("Initial Cart Items:", this.cartItems);
+  async mounted() {
+    console.log("Cart Items Before Check: ", this.cartItems);
+    const cartData = await CartService.getCartWithItemsByUserId(this.getUser.id);
+    cartData.forEach(data => {
+      console.log(data)
+    });
+    this.SET_CART_ITEMS(cartData);
+    console.log("Cart Items After Check: ", this.cartItems);
+    this.total = await this.calculateCartTotal(this.cartItems);
   },
   methods: {
     ...mapActions("cart", ["addToCart"]),
     ...mapMutations("cart", ["SET_CART_ITEMS"]),
+    async calculateCartTotal(items) {
+      let total = 0;
+      for (const item of items) {
+        const mineralWithPrice = await MineralService.getMineral(item.mineralId);
+        total += parseFloat(mineralWithPrice.price) || 0;
+      }
+      return total.toFixed(2);
+    },
     async checkCartItems() {
-      const mineralIds = this.cartItems.map((item) => item.id);
+      console.log("Cart Items during Check Cart Items: " + this.cartItems);
+      const mineralIds = this.cartItems;
+      mineralIds.forEach(mineral => {
+        console.log(mineral)
+      });
+      console.log(mineralIds);
       const availableMinerals = await MineralService.checkMineralAvailability(
         mineralIds
       );
-
+      console.log(availableMinerals)
       this.cartItems.forEach((item) => {
-        if (!availableMinerals.includes(item.id)) {
+        if (!availableMinerals.includes(item.mineralId)) {
           this.handleRemoveItem(item.id);
           alert(
             `Item ${item.name} is no longer available and has been removed from your cart.`
           );
+
         }
       });
     },
@@ -79,19 +119,26 @@ export default {
           return;
         }
 
-        const stripePublishableKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY;
+        // Fetch and assign Name and Price for each cart item
+        for (const item of this.cartItems) {
+          const mineralData = await MineralService.getMineral(item.mineralId);
+          item.Name = mineralData.name;
+          item.Price = mineralData.price;
+        }
 
+        const stripePublishableKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY;
+        console.log(this.cartItems);
         const lineItems = this.cartItems.map((item) => ({
-          Name: item.name,
+          Name: item.Name,
           Quantity: 1, // or the actual quantity if applicable
-          Price: item.price,
-          MineralId: item.id,
+          Price: item.Price,
+          MineralId: item.mineralId,
         }));
 
         const purchaseData = {
           LineItems: lineItems,
           UserId: this.getUser.id,
-          total: this.cartTotal,
+          total: this.total,
         };
 
         console.log("Purchase Data:", purchaseData);
@@ -110,7 +157,10 @@ export default {
     handleRemoveItem(itemId) {
       // Remove the item from the cart
       console.log("Handling remove-item event with itemId:", itemId);
-      this.$store.dispatch("cart/removeItem", itemId);
+      this.$store.dispatch("cart/removeItem", {
+        userId: this.getUser.id,
+        cartItemId: itemId,
+      });
     },
   },
 };

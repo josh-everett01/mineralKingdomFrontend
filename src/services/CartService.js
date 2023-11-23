@@ -9,9 +9,13 @@ const API_URL = "https://localhost:7240/api/shoppingcart/";
 class CartService {
   async getCartByUserId(userId) {
     try {
+      console.log("UserID during getCartByUserId: " + userId);
+      console.log("String being used: " + API_URL + userId);
       const response = await axios.get(API_URL + userId);
+      console.log("Users Cart: " + response.data.id)
       // Dispatch action to update cart items in the store
-      store.commit("cart/SET_CART_ITEMS", response.data.cartItems);
+      store.commit("cart/SET_CART_ITEMS", response.data.id);
+      console.log("From Get Cart2: " + response.data.id);
       return response.data;
     } catch (error) {
       this.handleError(error, "Failed to fetch cart");
@@ -20,8 +24,11 @@ class CartService {
 
   async getCartWithItemsByUserId(userId) {
     try {
+      console.log("UserID from getCartWithItemsByUserId: " + userId);
+      // await this.getCartByUserId(userId);
       const response = await axios.get(API_URL + "withitems/" + userId);
-      return response.data;
+      console.log("From Get Cart: " + response.data.cartItems);
+      return response.data.cartItems;
     } catch (error) {
       this.handleError(error, "Failed to fetch cart with items");
     }
@@ -71,7 +78,8 @@ class CartService {
         cartItemDTO // Pass the cartItemDTO here
       );
       // Dispatch action to add item to cart in the store
-      store.dispatch("cart/addToCart", cartItemDTO);
+      // store.dispatch("cart/addToCart", cartItemDTO);
+      console.log(response);
       return response.data;
     } catch (error) {
       this.handleError(error, "Failed to add item to cart");
@@ -80,12 +88,21 @@ class CartService {
 
   async removeItemFromCart(userId, cartItemId) {
     try {
-      const response = await axios.delete(
-        API_URL + userId + "/items/" + cartItemId
-      );
-      // notifyUser("Item removed from cart successfully");
+      // Construct the URL for the DELETE request
+      const url = `${API_URL}${userId}/items/${cartItemId}`;
+
+      // Perform the DELETE request
+      const response = await axios.delete(url);
+
+      // Optionally, dispatch an action to update the cart in the store
+      // For example, if you have such an action
+      // store.dispatch("cart/removeItem", cartItemId);
+
+      // Return the response data
+      console.log(response.data)
       return response.data;
     } catch (error) {
+      // Handle any errors that occur during the API call
       this.handleError(error, "Failed to remove item from cart");
     }
   }

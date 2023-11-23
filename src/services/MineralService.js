@@ -19,6 +19,7 @@ class MineralService {
 
   async getMineral(id) {
     try {
+      console.log("Mineral IDD: " + id)
       const response = await axios.get(API_URL + "Minerals/" + id);
       console.log("Mineral data fetched:", response.data);
       return response.data;
@@ -45,11 +46,14 @@ class MineralService {
   async checkMineralAvailability(mineralIds) {
     try {
       const availableMinerals = [];
-
-      for (const id of mineralIds) {
-        const mineral = await this.getMineral(id);
+      mineralIds.forEach(mineral => {
+        console.log(mineral);
+      });
+      console.log("In MineralService: " + availableMinerals);
+      for (const mineralId of mineralIds) {
+        const mineral = await this.getMineral(mineralId.mineralId);
         if (mineral.status !== 1) {
-          availableMinerals.push(id);
+          availableMinerals.push(mineralId.mineralId);
         }
       }
 

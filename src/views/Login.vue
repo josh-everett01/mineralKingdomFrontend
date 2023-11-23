@@ -21,6 +21,7 @@
 
 <script>
 import AuthService from "../services/AuthService";
+import CartService from '../services/CartService';
 import { mapActions } from "vuex";
 
 export default {
@@ -46,7 +47,13 @@ export default {
 
         // Fetch user-specific cart
         await this.fetchUserCart(userData.id);
+        const cartData = await CartService.getCartWithItemsByUserId(userData.id);
+        cartData.forEach(data => {
+          console.log(data);
+        });
 
+        // Dispatch an action to update the cart items in Vuex store
+        await this.$store.dispatch("cart/setCartItems", cartData);
         // Check if the user is an admin
         if (this.$store.getters.isAdmin) {
           this.$router.push({ name: "admin-dashboard" }); // Redirect to admin dashboard
@@ -66,6 +73,7 @@ export default {
     },
     async fetchUserCart(userId) {
       try {
+        console.log(userId);
         await this.$store.dispatch("cart/getCartByUserId", userId);
       } catch (error) {
         console.error("Error fetching user cart", error);
