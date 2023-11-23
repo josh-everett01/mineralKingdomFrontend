@@ -19,7 +19,7 @@ class BidService {
       const response = await axios.get(
         API_URL + "Auction/" + auctionId + "/winning-bid"
       );
-      console.log(response.data);
+      console.log("From BidService: " + response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching current winning bid:", error);

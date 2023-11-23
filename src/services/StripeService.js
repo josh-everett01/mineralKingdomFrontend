@@ -22,7 +22,10 @@ class StripeService {
   }
   async createCartCheckoutSession(cartData) {
     try {
+      console.log(cartData);
+      console.log(cartData.total);
       const response = await axios.post(API_URL + "checkout", cartData);
+      console.log(response.data);
       return response.data.sessionId;
     } catch (error) {
       console.error("Error creating cart checkout session:", error);

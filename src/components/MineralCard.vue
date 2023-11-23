@@ -40,7 +40,7 @@
       Your browser does not support the video tag.
     </video>
     <p>{{ mineral.description }}</p>
-    <p>${{ mineral.price }}</p>
+    <p>${{ mineral.price.toFixed(2) }}</p>
     <div class="button-container">
       <router-link
         :to="{ name: 'mineral-detail', params: { id: mineral.id } }"
@@ -153,7 +153,14 @@ export default {
         // Add other necessary properties
       };
 
-      this.$store.dispatch("cart/addToCart", cartItem);
+      const userId = this.getUser.id; // Get the current user's ID
+      if (!userId) {
+        console.error("User ID is undefined");
+        alert("Unable to add item to cart. Please log in again.");
+        return;
+      }
+
+      this.$store.dispatch("cart/addToCart", { userId, item: cartItem });
       alert("Item added to cart successfully!");
     },
   },

@@ -35,6 +35,7 @@ export default {
   },
   computed: {
     ...mapGetters(["isAuthenticated", "getUser"]),
+    ...mapGetters("cart", ["cartItems", "cartTotal"]),
     user() {
       return this.getUser || {};
     },
@@ -43,13 +44,18 @@ export default {
       return this.$store.getters.isAdmin;
     },
     cartItemCount() {
-      return this.$store.getters["cart/cartItems"].length;
+      const cartItems = this.cartItems;
+      console.log("Cart Items!!!: " + cartItems);
+      return cartItems ? cartItems.length : 0;
     },
+
   },
   methods: {
     ...mapActions(["setUser"]),
     async logout() {
+      console.log(this.getUser)
       await this.$store.dispatch("logout");
+      await this.$store.dispatch("cart/clearCart");
     },
   },
 };
