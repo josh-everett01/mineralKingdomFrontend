@@ -128,6 +128,7 @@ import BidService from "../services/BidService";
 import AuctionService from "../services/AuctionService";
 import UserService from "../services/UserService";
 import { mapGetters } from "vuex";
+// import CartService from '../services/CartService';
 
 export default {
   data() {
@@ -144,6 +145,9 @@ export default {
       currentHighestBid: { amount: 0, username: "" },
       successMessage: "",
       bids: [],
+      username: "",
+      auctionExtended: false,
+      previousEndTime: null,
     };
   },
   computed: {
@@ -202,6 +206,39 @@ export default {
         }
       }
     },
+    async fetchWinningBid() {
+      if (this.auction && this.auctionHasEnded) {
+        try {
+          const winningBid = await BidService.getWinningBidForCompletedAuction(this.auction.id);
+          return winningBid;
+        } catch (error) {
+          console.error("Error fetching winning bid:", error);
+        }
+      }
+    },
+    addToCart(mineral) {
+      if (!this.isAuthenticated) {
+        alert("Please log in to add items to the cart");
+        return;
+      }
+
+      const cartItem = {
+        id: mineral.id,
+        name: mineral.name,
+        price: mineral.price,
+        // Add other necessary properties
+      };
+
+      const userId = this.getUser.id; // Get the current user's ID
+      if (!userId) {
+        console.error("User ID is undefined");
+        alert("Unable to add item to cart. Please log in again.");
+        return;
+      }
+
+      this.$store.dispatch("cart/addToCart", { userId, item: cartItem });
+      alert("Item added to cart successfully!");
+    },
     async placeBid() {
       const minimumBid = this.currentHighestBid
         ? this.currentHighestBid.amount + this.bidIncrement
@@ -250,7 +287,15 @@ export default {
       this.activeImageIndex = index;
     },
     updateCountdown() {
+      if (!this.auction || !this.auction.endTime) {
+        return;
+      }
+
       const endTime = new Date(this.auction.endTime).getTime();
+      if (this.previousEndTime && this.previousEndTime !== endTime) {
+        this.auctionExtended = true; // Set true if end time changes
+        this.previousEndTime = endTime; // Update the previous end time
+      }
       const now = Date.now();
       const distance = endTime - now;
 
@@ -270,6 +315,11 @@ export default {
 
       // Output the result in a string format
       this.countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      if (this.auctionExtended) {
+        setTimeout(() => {
+          this.auctionExtended = false;
+        }, 5000); // Hide the message after 5 seconds
+      }
     },
     async fetchBidList() {
       try {
@@ -294,17 +344,29 @@ export default {
       const date = new Date(bidTime);
       return date.toLocaleString(); // Adjust formatting as needed
     },
+    async fetchAuctionDetails(auctionId) {
+      try {
+        const auctionData = await AuctionService.getAuction(auctionId);
+        this.auction = auctionData;
+        if (!this.previousEndTime) {
+          this.previousEndTime = new Date(this.auction.endTime).getTime();
+        }
+      } catch (error) {
+        console.error("Error fetching auction details:", error);
+      }
+    },
   },
   async created() {
     const auctionId = this.$route.params.id; // Get the id from the route parameters
-    try {
-      const auctionData = await AuctionService.getAuction(auctionId);
-      this.auction = auctionData; // Set the auction data
+    if (auctionId) {
+      await this.fetchAuctionDetails(auctionId);
+      // Now that this.auction is set, you can call other methods that depend on it
       await this.fetchBidList();
       await this.fetchMineralData(); // Now fetch the mineral data
       await this.fetchCurrentHighestBid(); // And the current highest bid
-    } catch (error) {
-      console.error("Error fetching auction details:", error);
+      await this.fetchWinningBid();
+    } else {
+      console.error("Auction ID is not available in route parameters");
     }
   },
   mounted() {
@@ -312,6 +374,7 @@ export default {
   },
   beforeDestroy() {
     clearInterval(this.countdownInterval);
+    clearInterval(this.auctionDetailInterval);
   },
 };
 </script>
