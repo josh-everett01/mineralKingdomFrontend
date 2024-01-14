@@ -57,12 +57,18 @@
       <span v-if="auction && auction.startingPrice">
         Starting Price: ${{ auction.startingPrice.toFixed(2) }}
       </span>
+      <span v-if="auction && !auctionHasStarted">
+        Starts on: {{ new Date(auction.startTime).toLocaleString() }}
+      </span>
       <span v-if="auction && auctionHasEnded">
         Started on: {{ new Date(auction.startTime).toLocaleString() }}
       </span>
     </div>
     <!-- Bidding section -->
-    <div v-if="auction && !auctionHasEnded" class="bid-section">
+    <div
+      v-if="auction && auctionHasStarted && !auctionHasEnded"
+      class="bid-section"
+    >
       <div v-if="successMessage" class="success-message">
         {{ successMessage }}
       </div>
@@ -128,7 +134,7 @@ import BidService from "../services/BidService";
 import AuctionService from "../services/AuctionService";
 import UserService from "../services/UserService";
 import { mapGetters } from "vuex";
-// import CartService from '../services/CartService';
+import CartService from "../services/CartService";
 
 export default {
   data() {
@@ -148,7 +154,24 @@ export default {
       username: "",
       auctionExtended: false,
       previousEndTime: null,
+      loading: false,
+      auctionHasEnded: false,
     };
+  },
+  watch: {
+    auction(newVal) {
+      if (newVal) {
+        this.fetchBidList();
+        this.fetchMineralData();
+        this.fetchCurrentHighestBid();
+      }
+    },
+    "auction.endTime"(newEndTime, oldEndTime) {
+      if (newEndTime !== oldEndTime) {
+        // Handle the updated end time (e.g., update countdown, UI elements, etc.)
+        this.updateCountdown();
+      }
+    },
   },
   computed: {
     ...mapGetters(["getUser"]),
@@ -164,13 +187,21 @@ export default {
     activeImage() {
       return this.allImages[this.activeImageIndex];
     },
-    auctionHasEnded() {
-      if (!this.auction || !this.auction.endTime) {
+    // auctionHasEnded() {
+    //   if (!this.auction || !this.auction.endTime) {
+    //     return false;
+    //   }
+    //   const now = new Date();
+    //   const endTime = new Date(this.auction.endTime);
+    //   return now >= endTime;
+    // },
+    auctionHasStarted() {
+      if (!this.auction || !this.auction.startTime) {
         return false;
       }
       const now = new Date();
-      const endTime = new Date(this.auction.endTime);
-      return now >= endTime;
+      const startTime = new Date(this.auction.startTime);
+      return now >= startTime;
     },
   },
   methods: {
@@ -209,8 +240,16 @@ export default {
     async fetchWinningBid() {
       if (this.auction && this.auctionHasEnded) {
         try {
-          const winningBid = await BidService.getWinningBidForCompletedAuction(this.auction.id);
-          return winningBid;
+          const winningBid = await BidService.getWinningBidForCompletedAuction(
+            this.auction.id
+          );
+          if (winningBid) {
+            const user = await UserService.getUserById(winningBid.userId);
+            this.currentHighestBid = {
+              amount: winningBid.amount,
+              username: user.username,
+            };
+          }
         } catch (error) {
           console.error("Error fetching winning bid:", error);
         }
@@ -243,6 +282,11 @@ export default {
       const minimumBid = this.currentHighestBid
         ? this.currentHighestBid.amount + this.bidIncrement
         : this.auction.startingPrice;
+      console.log("Hey Josh here is the minimum bid: " + minimumBid.amount)
+      if (this.newBidAmount < this.auction.startingPrice) {
+        alert(`Your bid must be at least $${this.auction.startingPrice + 1}.`);
+        return;
+      }
 
       if (this.newBidAmount < minimumBid) {
         alert(`Your bid must be at least $${minimumBid}.`);
@@ -287,15 +331,7 @@ export default {
       this.activeImageIndex = index;
     },
     updateCountdown() {
-      if (!this.auction || !this.auction.endTime) {
-        return;
-      }
-
       const endTime = new Date(this.auction.endTime).getTime();
-      if (this.previousEndTime && this.previousEndTime !== endTime) {
-        this.auctionExtended = true; // Set true if end time changes
-        this.previousEndTime = endTime; // Update the previous end time
-      }
       const now = Date.now();
       const distance = endTime - now;
 
@@ -315,11 +351,6 @@ export default {
 
       // Output the result in a string format
       this.countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-      if (this.auctionExtended) {
-        setTimeout(() => {
-          this.auctionExtended = false;
-        }, 5000); // Hide the message after 5 seconds
-      }
     },
     async fetchBidList() {
       try {
@@ -355,26 +386,83 @@ export default {
         console.error("Error fetching auction details:", error);
       }
     },
+    async updateMineralPriceWithWinningBid() {
+      if (this.currentHighestBid && this.currentHighestBid.amount) {
+        try {
+          this.mineral.price = this.currentHighestBid.amount;
+        } catch (error) {
+          console.error("Error updating mineral price:", error);
+        }
+      }
+    },
+    updateAuctionStatus() {
+      const now = new Date();
+      const endTime = new Date(this.auction.endTime);
+      const hasEnded = now >= endTime;
+
+      if (hasEnded && !this.auctionHasEnded) {
+        this.auctionHasEnded = true;
+      }
+    },
+    async refreshAuctionDetails() {
+      try {
+        const auctionData = await AuctionService.getAuction(this.auction.id);
+        this.auction.endTime = auctionData.endTime;
+      } catch (error) {
+        console.error("Error refreshing auction details:", error);
+      }
+    },
+    async refreshCartData() {
+      console.log("Cart Items Before Fetch in Header: ", this.cartItems);
+      try {
+        const userId = this.getUser.id;
+        const cartData = await CartService.getCartWithItemsByUserId(userId);
+        console.log("Fetched Cart Data: ", cartData);
+        this.$store.dispatch("cart/setCartItems", cartData);
+        console.log("Cart Items After Fetch in Header: ", this.cartItems);
+      } catch (error) {
+        console.error("Error fetching cart data:", error);
+      }
+    },
   },
   async created() {
     const auctionId = this.$route.params.id; // Get the id from the route parameters
+    // Set up periodic polling to refresh auction details
+    this.auctionRefreshInterval = setInterval(() => {
+      this.refreshAuctionDetails();
+      this.refreshCartData();
+    }, 10000);
     if (auctionId) {
-      await this.fetchAuctionDetails(auctionId);
-      // Now that this.auction is set, you can call other methods that depend on it
-      await this.fetchBidList();
-      await this.fetchMineralData(); // Now fetch the mineral data
-      await this.fetchCurrentHighestBid(); // And the current highest bid
-      await this.fetchWinningBid();
+      this.loading = true; // Start loading
+      try {
+        await this.fetchAuctionDetails(auctionId);
+        if (this.auction) {
+          await this.fetchMineralData();
+          await this.fetchCurrentHighestBid();
+          await this.fetchBidList();
+          if (this.auction.auctionHasEnded) {
+            await this.fetchWinningBid();
+          }
+        }
+      } catch (error) {
+        console.error("Error occurred while fetching data:", error);
+        // Handle the error appropriately
+      } finally {
+        this.loading = false; // End loading, regardless of success or error
+      }
     } else {
       console.error("Auction ID is not available in route parameters");
     }
   },
   mounted() {
     this.countdownInterval = setInterval(this.updateCountdown, 1000);
+    this.auctionStatusInterval = setInterval(this.updateAuctionStatus, 1000);
   },
   beforeDestroy() {
     clearInterval(this.countdownInterval);
     clearInterval(this.auctionDetailInterval);
+    clearInterval(this.auctionStatusInterval);
+    clearInterval(this.auctionRefreshInterval);
   },
 };
 </script>

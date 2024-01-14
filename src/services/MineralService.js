@@ -18,8 +18,12 @@ class MineralService {
   }
 
   async getMineral(id) {
+    if (!id) {
+      console.error("Invalid or missing mineral ID:", id);
+      return; // Return early to prevent API call with invalid URL
+    }
     try {
-      console.log("Mineral IDD: " + id)
+      console.log("Mineral ID:", id);
       const response = await axios.get(API_URL + "Minerals/" + id);
       console.log("Mineral data fetched:", response.data);
       return response.data;
@@ -28,6 +32,7 @@ class MineralService {
       throw error;
     }
   }
+
   async addMineral(mineralData) {
     try {
       console.log(mineralData);
@@ -46,7 +51,7 @@ class MineralService {
   async checkMineralAvailability(mineralIds) {
     try {
       const availableMinerals = [];
-      mineralIds.forEach(mineral => {
+      mineralIds.forEach((mineral) => {
         console.log(mineral);
       });
       console.log("In MineralService: " + availableMinerals);
@@ -61,6 +66,16 @@ class MineralService {
     } catch (error) {
       console.error("Error checking mineral availability:", error);
       throw error;
+    }
+  }
+
+  async mineralExists(id) {
+    try {
+      const response = await axios.get(API_URL + "Minerals/" + id);
+      return response.status === 200; // If the request is successful, the mineral exists
+    } catch (error) {
+      console.error("Error checking if mineral exists:", error);
+      return false; // If there's an error (e.g., 404 not found), the mineral does not exist
     }
   }
 }

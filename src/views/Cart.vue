@@ -10,9 +10,10 @@
         :key="item.id"
         :item="item"
         @remove-item="handleRemoveItem"
+        @price-updated="updateTotal"
       />
     </div>
-    <p v-if="cartItems.length > 0">Total: ${{ total }}</p>
+    <p v-if="cartItems.length > 0">Total: ${{ this.total }}</p>
     <button
       v-if="cartItems.length > 0"
       @click="initiateCheckout"
@@ -29,7 +30,11 @@ import { mapGetters, mapActions, mapMutations } from "vuex";
 import StripeService from "../services/StripeService";
 import { loadStripe } from "@stripe/stripe-js";
 import MineralService from "../services/MineralService";
-import CartService from '../services/CartService';
+import CartService from "../services/CartService";
+import BidService from '../services/BidService';
+import AuctionService from '../services/AuctionService';
+
+// import AuctionService from '../services/AuctionService';
 
 export default {
   components: {
@@ -58,21 +63,38 @@ export default {
   },
   async mounted() {
     console.log("Cart Items Before Check: ", this.cartItems);
-    const cartData = await CartService.getCartWithItemsByUserId(this.getUser.id);
-    cartData.forEach(data => {
-      console.log(data)
+    const cartData = await CartService.getCartWithItemsByUserId(
+      this.getUser.id
+    );
+    cartData.forEach((data) => {
+      console.log(data);
     });
     this.SET_CART_ITEMS(cartData);
     console.log("Cart Items After Check: ", this.cartItems);
-    this.total = await this.calculateCartTotal(this.cartItems);
+    this.$store.dispatch("cart/calculateTotal");
   },
   methods: {
     ...mapActions("cart", ["addToCart"]),
     ...mapMutations("cart", ["SET_CART_ITEMS"]),
     async calculateCartTotal(items) {
       let total = 0;
+      const auctions = await AuctionService.getAuctions(); // Fetch auctions here
+
       for (const item of items) {
         const mineralWithPrice = await MineralService.getMineral(item.mineralId);
+        console.log("HEy JOSH" + mineralWithPrice.price);
+        console.log("This is the mineral " + mineralWithPrice.isAuctionItem)
+        if (mineralWithPrice.isAuctionItem) {
+          console.log(mineralWithPrice)
+          const matchingAuction = auctions.find(auction => auction.mineralId === mineralWithPrice.id);
+          console.log("Matching Auction " + matchingAuction)
+          if (matchingAuction) {
+            const winningBid = await BidService.getWinningBidForCompletedAuction(matchingAuction.id); // Ensure you pass the correct auction ID
+            console.log("Winning Bid:", winningBid);
+            mineralWithPrice.price = winningBid.winningBid.amount; // Update the price based on the winning bid
+          }
+        }
+
         total += parseFloat(mineralWithPrice.price) || 0;
       }
       return total.toFixed(2);
@@ -80,21 +102,20 @@ export default {
     async checkCartItems() {
       console.log("Cart Items during Check Cart Items: " + this.cartItems);
       const mineralIds = this.cartItems;
-      mineralIds.forEach(mineral => {
-        console.log(mineral)
+      mineralIds.forEach((mineral) => {
+        console.log(mineral);
       });
       console.log(mineralIds);
       const availableMinerals = await MineralService.checkMineralAvailability(
         mineralIds
       );
-      console.log(availableMinerals)
+      console.log(availableMinerals);
       this.cartItems.forEach((item) => {
         if (!availableMinerals.includes(item.mineralId)) {
           this.handleRemoveItem(item.id);
           alert(
             `Item ${item.name} is no longer available and has been removed from your cart.`
           );
-
         }
       });
     },
@@ -102,6 +123,7 @@ export default {
       console.log("isAuthenticated:", this.isAuthenticated);
       console.log("getUser:", this.getUser);
       await this.checkCartItems();
+      this.total = await this.calculateCartTotal(this.cartItems);
       try {
         if (!this.isAuthenticated) {
           alert("Please log in to proceed with the checkout");
@@ -161,7 +183,19 @@ export default {
         userId: this.getUser.id,
         cartItemId: itemId,
       });
+      this.$store.dispatch("cart/calculateTotal");
     },
+    async updateTotal(updatedPrice) {
+      // Find the item in the cartItems array and update its price
+      const updatedItem = this.cartItems.find((item) => item.mineralId === updatedPrice.itemId);
+
+      if (updatedItem) {
+        updatedItem.Price = updatedPrice.price;
+      }
+
+      // Recalculate the total based on the updated prices
+      this.total = await this.calculateCartTotal(this.cartItems);
+    }
   },
 };
 </script>

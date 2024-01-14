@@ -1,6 +1,25 @@
 <template>
   <div class="admin-dashboard">
     <h2>Admin Dashboard</h2>
+
+    <!-- Instructions Section -->
+    <div class="instructions">
+      <h3>Instructions</h3>
+      <ul>
+        <li>
+          <strong>Add a Mineral:</strong> Go to 'Add Mineral' to add a new
+          mineral to the database. You will have the option to set it as an
+          auction piece or a for sale piece.
+        </li>
+        <li>
+          <strong>Add an Auction:</strong> After adding a mineral, you can
+          create an auction. Go to 'Add Auction' and select the mineral you just
+          added from the dropdown.
+        </li>
+      </ul>
+      <p>Contact us with any questions.</p>
+    </div>
+
     <div class="tools-container">
       <div class="tool-card">
         <router-link :to="{ name: 'admin-add-mineral' }" class="card-link">
@@ -113,6 +132,23 @@ export default {
 <style scoped>
 .admin-dashboard {
   padding: 16px;
+}
+
+.instructions {
+  padding: 16px;
+  margin-bottom: 20px; /* Spacing between instructions and tools */
+}
+
+ul {
+  list-style-type: none;
+}
+
+.instructions h3 {
+  margin-top: 0;
+}
+
+.instructions ol {
+  margin-left: 20px;
 }
 
 .tools-container {

@@ -16,6 +16,7 @@ class BidService {
 
   async getWinningBidForCompletedAuction(auctionId) {
     try {
+      console.log(auctionId)
       const response = await axios.get(
         API_URL + "Auction/" + auctionId + "/completed/winning-bid"
       );

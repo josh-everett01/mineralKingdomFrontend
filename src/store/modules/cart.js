@@ -1,9 +1,10 @@
 // src/store/modules/cart.js
 import CartService from "../../services/CartService";
-import MineralService from '../../services/MineralService';
+import MineralService from "../../services/MineralService";
 
 const state = {
   items: [], // Array to hold cart items
+  total: "0.00",
 };
 
 const mutations = {
@@ -21,34 +22,50 @@ const mutations = {
   CLEAR_CART(state) {
     state.items = [];
   },
+  UPDATE_ITEM_PRICE(state, updatedPrice) {
+    const itemIndex = state.items.findIndex(item => item.mineralId === updatedPrice.itemId);
+    if (itemIndex !== -1) {
+      state.items[itemIndex].price = updatedPrice.price;
+    }
+  },
+  SET_TOTAL(state, total) {
+    state.total = total;
+  },
 };
 
 const actions = {
   setCartItems({ commit }, cartItems) {
-    commit('SET_CART_ITEMS', cartItems);
+    console.log("SET CART ITEMS called!: " + cartItems);
+    commit("SET_CART_ITEMS", cartItems);
   },
   async addToCart({ commit }, { userId, item }) {
-    try {
-      console.log(item);
-      await CartService.addItemToCart(userId, item.id);
+    console.log("Attempting to add to cart:", item);
+    if (item && item.id && (await MineralService.mineralExists(item.id))) {
+      item.mineralId = item.id; // Set mineralId to id
+      console.log("Adding item to cart:", item);
+      await CartService.addItemToCart(userId, item.mineralId);
       commit("ADD_TO_CART", item);
-      console.log(item);
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
+    } else {
+      console.error(
+        "Invalid item, missing id, or mineral does not exist:",
+        item
+      );
     }
   },
   async removeItem({ commit }, payload) {
     console.log(payload);
     const { userId, cartItemId } = payload;
-    // if (!userId || !cartItemId) {
-    //   console.error("userId or cartItemId is missing");
-    //   return;
-    // }
+
+    if (!userId || !cartItemId) {
+      console.error("userId or cartItemId is missing");
+      return;
+    }
+
     try {
       console.log("UserID: " + userId);
       console.log("ItemId: " + cartItemId);
-      commit("REMOVE_ITEM", cartItemId);
       await CartService.removeItemFromCart(userId, cartItemId);
+      commit("REMOVE_ITEM", cartItemId);
     } catch (error) {
       console.error("Failed to remove item from cart:", error);
     }
@@ -71,26 +88,31 @@ const actions = {
       console.error("Failed to fetch cart by user ID:", error);
     }
   },
-  async calculateTotal(items) {
+  updateItemPrice({ commit }, updatedPrice) {
+    commit("UPDATE_ITEM_PRICE", updatedPrice);
+  },
+  async calculateTotal({ commit, state }) {
     let total = 0;
-    console.log(items)
-    for (const item of items) {
-      console.log(item);
-      const mineralWithPrice = await MineralService.getMineral(item.mineralId);
-      total += parseFloat(mineralWithPrice.price) || 0;
+    for (const item of state.items) {
+      total += parseFloat(item.price) || 0;
     }
-    return total.toFixed(2);
-  }
-
+    commit('SET_TOTAL', total.toFixed(2));
+  },
 };
 
 const getters = {
   cartItems: (state) => state.items,
-  cartTotal: async (state) => {
-    if (state.items.length === 0) {
-      return "0.00";
+  calculateTotal: (state) => async () => {
+    let total = 0;
+    for (const item of state.items) {
+      const mineralWithPrice = await MineralService.getMineral(item.mineralId);
+      total += parseFloat(mineralWithPrice.price) || 0;
     }
-    return await this.calculateTotal(state.items);
+    return total.toFixed(2);
+  },
+  cartTotal: (state) => state.total,
+  isItemInCart: (state) => (userId, mineralId) => {
+    return state.items.some(item => item.userId === userId && item.mineralId === mineralId);
   },
 };
 

@@ -1,7 +1,7 @@
 // services/CartService.js
 
 import axios from "axios";
-import store from "../store/index"; // Import Vuex store if you want to dispatch actions or commit mutations
+// import store from "../store/index"; // Import Vuex store if you want to dispatch actions or commit mutations
 // import { notifyUser } from '../utils/notifications'; // hypothetical notification utility
 
 const API_URL = "https://localhost:7240/api/shoppingcart/";
@@ -12,9 +12,7 @@ class CartService {
       console.log("UserID during getCartByUserId: " + userId);
       console.log("String being used: " + API_URL + userId);
       const response = await axios.get(API_URL + userId);
-      console.log("Users Cart: " + response.data.id)
-      // Dispatch action to update cart items in the store
-      store.commit("cart/SET_CART_ITEMS", response.data.id);
+      console.log("Users Cart: " + response.data.id);
       console.log("From Get Cart2: " + response.data.id);
       return response.data;
     } catch (error) {
@@ -69,17 +67,14 @@ class CartService {
       console.log("UserId: " + userId);
       console.log(item);
       const cartItemDTO = {
-        id: userId, // Ensure this is an integer
-        mineralId: item, // Ensure this is an integer without leading zeros
+        id: userId,
+        mineralId: item,
       };
       console.log(cartItemDTO.mineralId);
       const response = await axios.post(
         API_URL + userId + "/items",
-        cartItemDTO // Pass the cartItemDTO here
+        cartItemDTO
       );
-      // Dispatch action to add item to cart in the store
-      // store.dispatch("cart/addToCart", cartItemDTO);
-      console.log(response);
       return response.data;
     } catch (error) {
       this.handleError(error, "Failed to add item to cart");
@@ -94,15 +89,10 @@ class CartService {
       // Perform the DELETE request
       const response = await axios.delete(url);
 
-      // Optionally, dispatch an action to update the cart in the store
-      // For example, if you have such an action
-      // store.dispatch("cart/removeItem", cartItemId);
-
       // Return the response data
-      console.log(response.data)
+      console.log(response.data);
       return response.data;
     } catch (error) {
-      // Handle any errors that occur during the API call
       this.handleError(error, "Failed to remove item from cart");
     }
   }

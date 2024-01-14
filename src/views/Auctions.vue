@@ -57,8 +57,11 @@ export default {
     },
     futureAuctions() {
       const now = new Date();
+      console.log(
+        this.allAuctions.filter((auction) => new Date(auction.startTime) > now)
+      );
       return this.allAuctions.filter(
-        (auction) => new Date(auction.startDate) > now
+        (auction) => new Date(auction.startTime) > now
       );
     },
     pastAuctions() {
