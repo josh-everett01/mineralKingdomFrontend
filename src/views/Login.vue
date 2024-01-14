@@ -21,7 +21,7 @@
 
 <script>
 import AuthService from "../services/AuthService";
-import CartService from '../services/CartService';
+import CartService from "../services/CartService";
 import { mapActions } from "vuex";
 
 export default {
@@ -47,8 +47,10 @@ export default {
 
         // Fetch user-specific cart
         await this.fetchUserCart(userData.id);
-        const cartData = await CartService.getCartWithItemsByUserId(userData.id);
-        cartData.forEach(data => {
+        const cartData = await CartService.getCartWithItemsByUserId(
+          userData.id
+        );
+        cartData.forEach((data) => {
           console.log(data);
         });
 

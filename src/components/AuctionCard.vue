@@ -58,6 +58,21 @@
           }}
         </p>
       </div>
+      <br />
+      <br />
+      <span
+        v-if="
+          (auctionHasStarted && !auctionHasEnded) ||
+          (auctionHasStarted && auctionHasEnded)
+        "
+      >
+        Started on: {{ new Date(auction.startTime).toLocaleString() }}
+      </span>
+      <span v-else-if="!auctionHasStarted">
+        Starting on: {{ new Date(auction.startTime).toLocaleString() }}
+      </span>
+      <br />
+      <br />
       <span v-if="auctionHasEnded">
         Ended on: {{ new Date(auction.endTime).toLocaleString() }}
       </span>
@@ -134,6 +149,9 @@ export default {
     },
     auctionHasEnded() {
       return new Date() > new Date(this.auction.endTime);
+    },
+    auctionHasStarted() {
+      return new Date() > new Date(this.auction.startTime);
     },
   },
   methods: {

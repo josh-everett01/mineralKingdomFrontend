@@ -102,7 +102,7 @@ export default {
       try {
         // Fetch all minerals from your service
         const minerals = await MineralService.getMinerals();
-        // Filter minerals to only those that are for auction
+        // Filter minerals to only those that are for future auction
         this.mineralsForAuction = minerals.filter(
           (mineral) => mineral.isAuctionItem
         );

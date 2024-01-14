@@ -47,8 +47,12 @@
         class="button view-details"
         >View Details</router-link
       >
-      <button @click="addToCart(mineral)" class="button add-to-cart">
-        Add to Cart
+      <button
+        @click="addToCart(mineral)"
+        :disabled="this.isItemInCart"
+        class="button add-to-cart"
+      >
+        {{ isItemInCart ? "Item in Cart" : "Add to Cart" }}
       </button>
     </div>
   </div>
@@ -79,6 +83,7 @@ export default {
     return {
       activeImageIndex: 0,
       showControls: false,
+      isItemInCart: this.$store.getters['cart/isItemInCart'](this.userId, this.mineral.id),
     };
   },
   methods: {
@@ -146,13 +151,6 @@ export default {
         return;
       }
 
-      const cartItem = {
-        id: mineral.id,
-        name: mineral.name,
-        price: mineral.price,
-        // Add other necessary properties
-      };
-
       const userId = this.getUser.id; // Get the current user's ID
       if (!userId) {
         console.error("User ID is undefined");
@@ -160,8 +158,26 @@ export default {
         return;
       }
 
-      this.$store.dispatch("cart/addToCart", { userId, item: cartItem });
-      alert("Item added to cart successfully!");
+      // Check if the item is already in the cart
+      const isItemInCart = this.$store.getters['cart/isItemInCart'](userId, mineral.id);
+
+      if (isItemInCart) {
+        // Show a message that the item is already in the cart
+        alert("This item is already in your cart");
+      } else {
+        // Add the item to the cart
+        const cartItem = {
+          id: mineral.id,
+          name: mineral.name,
+          price: mineral.price,
+          // Add other necessary properties
+        };
+
+        this.$store.dispatch("cart/addToCart", { userId, item: cartItem });
+        alert("Item added to cart successfully!");
+
+        this.isItemInCart = true;
+      }
     },
   },
 };

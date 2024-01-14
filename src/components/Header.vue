@@ -27,6 +27,7 @@
 
 <script>
 import { mapActions, mapGetters } from "vuex";
+import CartService from "../services/CartService";
 //import AuthService from "../services/AuthService";
 
 export default {
@@ -48,12 +49,47 @@ export default {
       console.log("Cart Items!!!: " + cartItems);
       return cartItems ? cartItems.length : 0;
     },
-
+  },
+  async mounted() {
+    // this.initializeSSE();
+    console.log("Cart Items Before Fetch in Header: ", this.cartItems);
+    try {
+      const userId = this.getUser.id;
+      const cartData = await CartService.getCartWithItemsByUserId(userId);
+      console.log("Fetched Cart Data: ", cartData);
+      this.$store.dispatch("cart/setCartItems", cartData);
+      console.log("Cart Items After Fetch in Header: ", this.cartItems);
+    } catch (error) {
+      console.error("Error fetching cart data:", error);
+    }
   },
   methods: {
     ...mapActions(["setUser"]),
+    ...mapActions("cart", ["setCartItems"]),
+
+    initializeSSE() {
+      const eventSource = new EventSource(
+        "https://localhost:7240/CartUpdates/stream"
+      ); // Replace with your SSE endpoint
+      console.log("Coming to you from SSE");
+      eventSource.onmessage = (event) => {
+        console.log("FromSSE: ", event.data); // Log the actual data received
+        const data = JSON.parse(event.data);
+        console.log("Parsed Data: ", data); // Log the parsed data
+        if (data.userId === this.user.id) {
+          // Check if the update is for the current user
+          this.setCartItems(data.cartItems);
+          console.log("Updated Cart Items via SSE: " + data.cartItems);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("SSE error:", error);
+        eventSource.close();
+      };
+    },
     async logout() {
-      console.log(this.getUser)
+      console.log(this.getUser);
       await this.$store.dispatch("logout");
       await this.$store.dispatch("cart/clearCart");
     },

@@ -55,14 +55,16 @@
 
 <script>
 import MineralService from "../services/MineralService";
+import AuctionService from "../services/AuctionService";
+import BidService from "../services/BidService";
 
 export default {
   props: {
     item: {
       type: Object, // Changed from typeof to type
       required: true,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
   data() {
     return {
@@ -70,6 +72,9 @@ export default {
       showControls: false,
       mineralData: null,
       loadError: false,
+      winningBid: null,
+      auctionId: null,
+      isAuctionItem: false,
     };
   },
   computed: {
@@ -109,22 +114,54 @@ export default {
         this.activeImageIndex = 0;
       }
     },
+    async loadWinningBid() {
+      try {
+        console.log(this.item.id);
+        const auctions = await AuctionService.getAuctions();
+        auctions.forEach((auction) => {
+          if (auction.mineralId == this.item.mineralId) {
+            this.auctionId = auction.id;
+          }
+        });
+
+        const winningBid = await BidService.getWinningBidForCompletedAuction(
+          this.auctionId
+        );
+        console.log("THIS IS THE WINNING BID: " + winningBid.winningBid.amount);
+        this.winningBid = winningBid.winningBid.amount;
+        this.$emit("price-updated", { itemId: this.item.mineralId, price: winningBid.winningBid.amount });
+      } catch (error) {
+        console.error("Error loading winning bid:", error);
+        // Handle the error appropriately
+      }
+    },
     formattedPrice() {
-      return !isNaN(parseFloat(this.mineralData.price))
-        ? `${this.mineralData.price.toFixed(2)}`
-        : "Price not available";
+      // Check if winningBid is defined and has an amount property
+      if (this.winningBid && typeof this.winningBid === "number") {
+        return `${this.winningBid.toFixed(2)}`;
+      }
+      // Fallback to mineral price if no winning bid
+      if (this.mineralData && !isNaN(parseFloat(this.mineralData.price))) {
+        return `${this.mineralData.price.toFixed(2)}`;
+      }
+      return "Price not available";
     },
     removeFromCart() {
       this.$emit("remove-item", this.mineralData.id);
     },
   },
-  mounted() {
-    this.loadMineralDetails();
+  async mounted() {
+    await this.loadMineralDetails();
+    console.log(await this.mineralData);
+    if (this.mineralData.isAuctionItem) {
+      this.loadWinningBid();
+    }
   },
   watch: {
     "item.mineralId": function (newVal, oldVal) {
       if (newVal !== oldVal) {
         this.loadMineralDetails();
+        this.loadWinningBid();
       }
     },
   },
