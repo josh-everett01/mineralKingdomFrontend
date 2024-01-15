@@ -33,7 +33,14 @@ export default {
       try {
         const auctions = await AuctionService.getAuctions();
         console.log(auctions);
-        this.featuredAuctions = auctions;
+
+        // Filter auctions to include only current or future ones
+        const currentDate = new Date();
+        this.featuredAuctions = auctions.filter(auction => {
+          console.log("This is the auction: " + auction)
+          const auctionDate = new Date(auction.endTime); // Replace 'endDate' with the actual property name
+          return auctionDate >= currentDate;
+        });
       } catch (error) {
         console.error("Error fetching auctions:", error);
       }
