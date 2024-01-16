@@ -5,6 +5,7 @@
         <router-link to="/home">Home</router-link>
         <router-link to="/shop">Shop</router-link>
         <router-link v-if="isAdmin" to="/admin">Admin Dashboard</router-link>
+        <router-link v-if="isUser" to="/user">User Dashboard</router-link>
         <router-link to="/auctions">Auctions</router-link>
         <router-link to="/contact">Contact Us</router-link>
       </nav>
@@ -43,6 +44,9 @@ export default {
     isAdmin() {
       // Access the store getter to check if the user is an admin
       return this.$store.getters.isAdmin;
+    },
+    isUser() {
+      return this.$store.getters.isUser;
     },
     cartItemCount() {
       const cartItems = this.cartItems;
