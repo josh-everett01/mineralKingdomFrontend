@@ -45,6 +45,11 @@ export default new Vuex.Store({
       state.minerals = [];
       state.user = null;
     },
+    UPDATE_USER_DATA(state, updatedUser) {
+      console.log("Mutation - Updating user data:", updatedUser);
+      // Update the user data in the state
+      state.user = updatedUser;
+    },
   },
   plugins: [vuexLocalStorage],
   actions: {
@@ -105,6 +110,9 @@ export default new Vuex.Store({
     },
     isAdmin(state) {
       return state.user && state.user.userRole === 1;
+    },
+    isUser(state) {
+      return state.user && state.user.userRole === 2;
     },
     getRegistrationMessage(state) {
       return state.registrationMessage;

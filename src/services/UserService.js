@@ -15,6 +15,18 @@ class UserService {
       throw error;
     }
   }
+
+  async partiallyUpdateUser(userId, partialUpdateUserDTO) {
+    try {
+      const response = await axios.patch(API_URL + "User/" + userId, partialUpdateUserDTO);
+      console.log("User data updated:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
+  }
+
 }
 
 export default new UserService();

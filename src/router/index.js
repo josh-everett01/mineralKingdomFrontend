@@ -14,6 +14,7 @@ import AuctionDetail from "../views/AuctionDetail.vue";
 import PaymentSuccess from "../views/PaymentSuccess.vue";
 import PaymentCancelled from "../views/PaymentCancelled.vue";
 import store from "../store/index";
+import UserDashboard from "../views/UserDashboard.vue";
 import AdminDashboard from "../views/AdminDashboard.vue";
 import AddMineralForm from "../components/AddMineralForm.vue";
 import UpdateAuctionForm from "../components/UpdateAuctionForm.vue";
@@ -102,6 +103,18 @@ const routes = [
     path: "/cart",
     name: "Cart",
     component: Cart,
+  },
+  {
+    path: "/user",
+    component: UserDashboard,
+    name: "user-dashboard",
+    beforeEnter(to, from, next) {
+      if (store.getters.isUser) {
+        next();
+      } else {
+        next("/login"); // Redirect to login page if not admin
+      }
+    },
   },
   {
     path: "/admin",

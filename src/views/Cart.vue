@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Your Cart</h2>
-    <div v-if="cartItems.length === 0 || !cartItems.length == undefined">
+    <div v-if="isCartEmpty">
       <p>Your cart is empty.</p>
     </div>
     <div v-else class="cart-items">
@@ -13,11 +13,27 @@
         @price-updated="updateTotal"
       />
     </div>
-    <p v-if="cartItems.length > 0">Total: ${{ this.total }}</p>
+    <p v-if="!isCartEmpty">Total: ${{ this.total }}</p>
+    <div class="shipping-address-container">
+      <div v-if="!isCartEmpty" class="shipping-address">
+        <label for="shipping-address">Shipping Address:</label> <br />
+        <span>
+          {{ getUser.firstName }} {{ getUser.lastName }}<br />
+          {{ getUser.streetAddress }}<br />
+          {{ getUser.city }}, {{ getUser.state }} {{ getUser.zipCode }}
+        </span>
+        <!-- Display the user's address -->
+      </div>
+    </div>
+    <div v-if="!isCartEmpty" class="confirm-address">
+      <input type="checkbox" id="confirm-address" v-model="addressConfirmed" />
+      <label for="confirm-address">I CONFIRM THIS IS MY SHIPPING ADDRESS</label>
+    </div>
     <button
-      v-if="cartItems.length > 0"
       @click="initiateCheckout"
       class="checkout-button"
+      :disabled="!addressConfirmed"
+      :class="{ 'disabled-button': !addressConfirmed }"
     >
       Checkout
     </button>
@@ -43,11 +59,16 @@ export default {
   data() {
     return {
       total: "0.00", // Initialize total as a data property
+      shippingAddress: "", // Store the user's shipping address
+      addressConfirmed: false, // Flag to confirm the address
     };
   },
   computed: {
     ...mapGetters("cart", ["cartItems", "cartTotal"]),
     ...mapGetters(["isAuthenticated", "getUser"]),
+    isCartEmpty() {
+      return this.cartItems.length === 0;
+    },
   },
   watch: {
     cartItems: {
@@ -57,6 +78,7 @@ export default {
           this.total = "0.00";
         } else {
           this.total = await this.calculateCartTotal(newItems);
+
         }
       },
     },
@@ -281,5 +303,24 @@ export default {
 
 .checkout-button:hover {
   background-color: #333;
+}
+
+.disabled-button {
+  background-color: #ccc; /* Change the background color to a grayish tone */
+  color: #666; /* Change the text color to a darker gray */
+  cursor: not-allowed; /* Change the cursor to 'not-allowed' */
+  /* You can also add any other styles to visually indicate it's disabled */
+}
+
+.shipping-address-container {
+  max-width: 250px; /* Set your desired maximum width */
+  margin: 0 auto; /* Center the container horizontally */
+  padding: 10px; /* Add some padding to the container */
+}
+
+.shipping-address {
+  border: 1px solid black;
+  padding: 10px;
+  border-radius: 10px; /* Adds rounded corners */
 }
 </style>

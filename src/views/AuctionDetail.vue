@@ -44,7 +44,11 @@
     <div v-if="bids.length" class="bid-list">
       <h3>Bid History</h3>
       <ul>
-        <li v-for="(bid, index) in sortedAndLimitedBids" :key="index">
+        <li
+          v-for="(bid, index) in sortedAndLimitedBids"
+          :key="index"
+          :class="{ 'green-text': isMyBid(bid), 'red-text': !isMyBid(bid) }"
+        >
           ${{ bid.amount.toFixed(2) }} by {{ bid.username }} on
           {{ formatBidTime(bid.bidTime) }}
         </li>
@@ -73,9 +77,12 @@
         {{ successMessage }}
       </div>
       <span v-if="currentHighestBid && currentHighestBid.amount">
-        Current Bid:
+        Current Highest Bid:
         <span :class="{ 'green-text': true }"
           >${{ currentHighestBid.amount.toFixed(2) }}</span
+        ><br />
+        <span v-if="isMyBid(currentHighestBid)" class="green-text"
+          >You currently have the highest bid!</span
         >
       </span>
       <span v-if="auction && !auctionHasEnded">
@@ -96,6 +103,21 @@
         placeholder="Enter your bid"
       />
       <button @click="placeBid" class="bid-button">Place Bid</button>
+    </div>
+    <div
+      v-if="auctionHasEnded && isMyBid(currentHighestBid)"
+      class="auction-ended-section"
+    >
+      <h2>Congratulations! You won this auction.</h2>
+      <p>
+        Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
+        {{ currentHighestBid.username }}
+      </p>
+      <p>Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}</p>
+      <p>
+        You will receive a confirmation email shortly once your item has been
+        moved to your Cart.
+      </p>
     </div>
     <div v-if="auction && auctionHasEnded" class="auction-ended-section">
       <h2>Auction Winner</h2>
@@ -447,6 +469,9 @@ export default {
         console.error("Error fetching cart data:", error);
       }
     },
+    isMyBid(bid) {
+      return bid.username === this.getUser.username;
+    },
   },
   async created() {
     const auctionId = this.$route.params.id; // Get the id from the route parameters
@@ -625,5 +650,9 @@ export default {
 
 .green-text {
   color: green;
+}
+
+.red-text {
+  color: red;
 }
 </style>
