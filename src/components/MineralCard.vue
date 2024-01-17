@@ -83,7 +83,10 @@ export default {
     return {
       activeImageIndex: 0,
       showControls: false,
-      isItemInCart: this.$store.getters['cart/isItemInCart'](this.userId, this.mineral.id),
+      isItemInCart: this.$store.getters["cart/isItemInCart"](
+        this.userId,
+        this.mineral.id
+      ),
     };
   },
   methods: {
@@ -159,7 +162,10 @@ export default {
       }
 
       // Check if the item is already in the cart
-      const isItemInCart = this.$store.getters['cart/isItemInCart'](userId, mineral.id);
+      const isItemInCart = this.$store.getters["cart/isItemInCart"](
+        userId,
+        mineral.id
+      );
 
       if (isItemInCart) {
         // Show a message that the item is already in the cart

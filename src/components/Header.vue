@@ -57,14 +57,16 @@ export default {
   async mounted() {
     // this.initializeSSE();
     console.log("Cart Items Before Fetch in Header: ", this.cartItems);
-    try {
-      const userId = this.getUser.id;
-      const cartData = await CartService.getCartWithItemsByUserId(userId);
-      console.log("Fetched Cart Data: ", cartData);
-      this.$store.dispatch("cart/setCartItems", cartData);
-      console.log("Cart Items After Fetch in Header: ", this.cartItems);
-    } catch (error) {
-      console.error("Error fetching cart data:", error);
+    if (this.isAuthenticated && this.getUser) {
+      try {
+        const userId = this.getUser.id;
+        const cartData = await CartService.getCartWithItemsByUserId(userId);
+        console.log("Fetched Cart Data: ", cartData);
+        this.$store.dispatch("cart/setCartItems", cartData);
+        console.log("Cart Items After Fetch in Header: ", this.cartItems);
+      } catch (error) {
+        console.error("Error fetching cart data:", error);
+      }
     }
   },
   methods: {

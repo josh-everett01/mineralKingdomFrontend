@@ -17,7 +17,7 @@
           added from the dropdown.
         </li>
       </ul>
-      <p>Contact us with any questions.</p>
+      <p>Hit me up with any questions.</p>
     </div>
 
     <div class="tools-container">
@@ -63,6 +63,18 @@
           </div>
         </div>
       </div>
+      <div class="tool-card">
+        <div class="inquiry-dashboard-section">
+          <AdminInquiryDashboard @inquirySelected="handleInquirySelected" />
+        </div>
+        <div v-if="selectedInquiry" class="inquiry-response-section">
+          <InquiryResponseForm
+            v-if="selectedInquiry"
+            :inquiryId="selectedInquiry.id"
+            @close="selectedInquiry = null"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -73,6 +85,9 @@
 // import UpdateAuctionForm from "../components/UpdateAuctionForm.vue";
 import AuctionService from "../services/AuctionService";
 import BidService from "../services/BidService";
+import AdminInquiryDashboard from "../components/AdminInquiryDashboard.vue";
+import InquiryResponseForm from "../components/InquiryResponseForm.vue";
+import { mapGetters } from "vuex";
 
 export default {
   // components: {
@@ -80,10 +95,19 @@ export default {
   //   AddAuctionForm,
   //   UpdateAuctionForm,
   // },
+  computed: {
+    ...mapGetters({
+      inquiries: "correspondence/inquiries",
+    }),
+  },
+  components: {
+    AdminInquiryDashboard,
+    InquiryResponseForm,
+  },
   data() {
     return {
       auctions: [],
-
+      selectedInquiry: null,
     };
   },
   created() {
@@ -99,6 +123,19 @@ export default {
     });
   },
   methods: {
+    handleInquirySelected(inquiryId) {
+      this.selectedInquiry = this.inquiries.find(
+        (inquiry) => inquiry.id === inquiryId
+      );
+    },
+    handleInquiryResponded(inquiryId) {
+      // Remove the responded inquiry from the list
+      this.inquiries = this.inquiries.filter(
+        (inquiry) => inquiry.id !== inquiryId
+      );
+      // Optionally, you can also refresh the inquiries list from the server
+      // this.fetchAllInquiries();
+    },
     async fetchAuctions() {
       try {
         const fetchedAuctions = await AuctionService.getAuctions();
@@ -124,6 +161,12 @@ export default {
         minute: "numeric",
       };
       return new Date(dateString).toLocaleDateString(undefined, options);
+    },
+    mounted() {
+      this.$root.$on("inquiryResponded", this.handleInquiryResponded);
+    },
+    beforeDestroy() {
+      this.$root.$off("inquiryResponded", this.handleInquiryResponded);
     },
   },
 };
