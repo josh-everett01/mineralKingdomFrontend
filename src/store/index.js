@@ -5,8 +5,10 @@ import createPersistedState from "vuex-persistedstate";
 import minerals from "../store/modules/minerals";
 import auctions from "./modules/auctions";
 import cart from "./modules/cart";
+import correspondence from "./modules/correspondence";
 import MineralService from "../services/MineralService";
 import AuthService from "../services/AuthService";
+import UserService from "../services/UserService";
 import router from "../router";
 
 const vuexLocalStorage = createPersistedState({
@@ -21,11 +23,13 @@ export default new Vuex.Store({
     minerals,
     auctions,
     cart,
+    correspondence,
   },
   state: {
     user: null,
     registrationMessage: null,
     role: null,
+    userPayments: [],
   },
   mutations: {
     SET_USER(state, user) {
@@ -49,6 +53,9 @@ export default new Vuex.Store({
       console.log("Mutation - Updating user data:", updatedUser);
       // Update the user data in the state
       state.user = updatedUser;
+    },
+    SET_USER_PAYMENTS(state, payments) {
+      state.userPayments = payments;
     },
   },
   plugins: [vuexLocalStorage],
@@ -100,6 +107,14 @@ export default new Vuex.Store({
         commit("SET_LOADING", false);
       }
     },
+    async fetchUserPayments({ commit }, userId) {
+      try {
+        const payments = await UserService.getUserPayments(userId);
+        commit("SET_USER_PAYMENTS", payments);
+      } catch (error) {
+        console.error("Error fetching user payments:", error);
+      }
+    },
   },
   getters: {
     isAuthenticated(state) {
@@ -121,6 +136,9 @@ export default new Vuex.Store({
       console.log("Vuex State:", state);
       console.log("Auth Token:", state.user ? state.user.jwtToken : null);
       return state.user ? state.user.jwtToken : null;
+    },
+    userPayments(state) {
+      return state.userPayments;
     },
   },
 });

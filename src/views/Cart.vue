@@ -127,16 +127,16 @@ export default {
       mineralIds.forEach((mineral) => {
         console.log(mineral);
       });
-      console.log(mineralIds);
+      console.log("These are the mineral ids: " + mineralIds);
       const availableMinerals = await MineralService.checkMineralAvailability(
         mineralIds
       );
       console.log(availableMinerals);
       this.cartItems.forEach((item) => {
         if (!availableMinerals.includes(item.mineralId)) {
-          this.handleRemoveItem(item.id);
+          this.handleRemoveItem(item.mineralId);
           alert(
-            `Item ${item.name} is no longer available and has been removed from your cart.`
+            `There was an item in your cart that is no longer available. This item has been removed from your cart.`
           );
         }
       });
