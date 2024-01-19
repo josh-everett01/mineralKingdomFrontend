@@ -78,6 +78,17 @@ class MineralService {
       return false; // If there's an error (e.g., 404 not found), the mineral does not exist
     }
   }
+
+  async updateMineral(mineralId, mineralData) {
+    try {
+      const response = await axios.put(API_URL + "Minerals/" + mineralId, mineralData);
+      console.log("Mineral updated:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating mineral:", error);
+      throw error;
+    }
+  }
 }
 
 export default new MineralService();
