@@ -3,9 +3,10 @@ services:
   frontend:
     build: .
     ports:
-      - "8080:8080"
+      - "10000:10000"  # Map the local port to the container's port
     environment:
       - NODE_ENV=production
+      - PORT=10000  # Set the PORT environment variable for the container
     volumes:
       - .:/app
       - /app/node_modules

@@ -1,11 +1,5 @@
-const fs = require('fs');
-
 module.exports = {
   devServer: {
-    https: {
-      key: fs.readFileSync('./private_key.pem'),
-      cert: fs.readFileSync('./Certificate.pem'),
-    },
-    port: 8080
+    port: process.env.PORT || 8080  // Use the PORT environment variable, default to 8080 if not set
   }
-}
+};
