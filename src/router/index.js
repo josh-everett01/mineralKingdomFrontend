@@ -13,6 +13,7 @@ import MineralDetail from "../views/MineralDetail.vue";
 import AuctionDetail from "../views/AuctionDetail.vue";
 import PaymentSuccess from "../views/PaymentSuccess.vue";
 import PaymentCancelled from "../views/PaymentCancelled.vue";
+import EditMineral from "../components/EditMineral.vue"
 import store from "../store/index";
 import UserDashboard from "../views/UserDashboard.vue";
 import AdminDashboard from "../views/AdminDashboard.vue";
@@ -162,6 +163,19 @@ const routes = [
         next();
       } else {
         next("/login");
+      }
+    },
+  },
+  {
+    path: "/admin/edit-mineral/:id", // Include 'admin' in the path
+    component: EditMineral,
+    name: "admin-edit-mineral",
+    props: true,
+    beforeEnter(to, from, next) {
+      if (store.getters.isAdmin) {
+        next();
+      } else {
+        next("/login"); // Redirect to login page if not admin
       }
     },
   },

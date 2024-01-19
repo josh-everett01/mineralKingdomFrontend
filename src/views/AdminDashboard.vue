@@ -27,6 +27,30 @@
           <p>Add new minerals to the database for auctioning.</p>
         </router-link>
       </div>
+      <!-- Manage Minerals Section -->
+      <div class="tool-card">
+        <h3>Manage Minerals</h3>
+        <div class="minerals-list">
+          <div
+            v-for="mineral in minerals"
+            :key="mineral.id"
+            class="mineral-item"
+          >
+            <div class="mineral-content">
+              <h4>{{ mineral.name }}</h4>
+              <h4>{{ mineral.id }}</h4>
+              <h4 v-if="mineral.isAuctionItem">AUCTION</h4>
+              <h4 v-else>FOR SALE</h4>
+              <!-- Add a link to the Edit Mineral page -->
+              <router-link
+                :to="{ name: 'admin-edit-mineral', params: { id: mineral.id } }"
+                class="edit-link"
+                >Edit</router-link
+              >
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="tool-card">
         <router-link :to="{ name: 'admin-add-auction' }" class="card-link">
           <h3>Add Auction</h3>
@@ -87,7 +111,9 @@ import AuctionService from "../services/AuctionService";
 import BidService from "../services/BidService";
 import AdminInquiryDashboard from "../components/AdminInquiryDashboard.vue";
 import InquiryResponseForm from "../components/InquiryResponseForm.vue";
+import MineralService from '../services/MineralService';
 import { mapGetters } from "vuex";
+
 
 export default {
   // components: {
@@ -107,11 +133,13 @@ export default {
   data() {
     return {
       auctions: [],
+      minerals: [],
       selectedInquiry: null,
     };
   },
   created() {
     this.fetchAuctions();
+    this.fetchMinerals();
   },
   beforeRouteEnter(to, from, next) {
     next((vm) => {
@@ -161,6 +189,9 @@ export default {
         minute: "numeric",
       };
       return new Date(dateString).toLocaleDateString(undefined, options);
+    },
+    async fetchMinerals() {
+      this.minerals = await MineralService.getMinerals();
     },
     mounted() {
       this.$root.$on("inquiryResponded", this.handleInquiryResponded);
@@ -240,5 +271,20 @@ ul {
 
 .auction-content h4 {
   margin-top: 0;
+}
+
+.mineral-content {
+  border: 1px solid #ccc; /* Light grey border */
+  border-radius: 8px; /* Rounded corners */
+  padding: 16px; /* Spacing inside the box */
+  margin-bottom: 16px; /* Spacing between each mineral content box */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  background-color: #fff; /* White background */
+}
+
+.minerals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Adjust the gap if necessary */
 }
 </style>
