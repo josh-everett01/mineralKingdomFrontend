@@ -4,7 +4,7 @@ import axios from "axios";
 // import store from "../store/index"; // Import Vuex store if you want to dispatch actions or commit mutations
 // import { notifyUser } from '../utils/notifications'; // hypothetical notification utility
 
-const API_URL = "https://localhost:7240/api/shoppingcart/";
+const API_URL = process.env.VUE_APP_API_URL + "shoppingcart/";
 
 class CartService {
   async getCartByUserId(userId) {

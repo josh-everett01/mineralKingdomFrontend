@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://localhost:7240/api/";
+const API_URL = "https://localhost/api/";
 
 class MineralService {
   async getMinerals() {

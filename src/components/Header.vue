@@ -75,7 +75,7 @@ export default {
 
     initializeSSE() {
       const eventSource = new EventSource(
-        "https://localhost:7240/CartUpdates/stream"
+        process.env.VUE_APP_API_URL + "/CartUpdates/stream"
       ); // Replace with your SSE endpoint
       console.log("Coming to you from SSE");
       eventSource.onmessage = (event) => {
