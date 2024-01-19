@@ -2,7 +2,9 @@
 
 import axios from "axios";
 
-const API_URL = "https://localhost/api/";
+// const API_URL = "https://localhost/api/";
+
+const API_URL = process.env.VUE_APP_API_URL;
 
 class UserService {
   async getUserById(id) {
