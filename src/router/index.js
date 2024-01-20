@@ -13,7 +13,7 @@ import MineralDetail from "../views/MineralDetail.vue";
 import AuctionDetail from "../views/AuctionDetail.vue";
 import PaymentSuccess from "../views/PaymentSuccess.vue";
 import PaymentCancelled from "../views/PaymentCancelled.vue";
-import EditMineral from "../components/EditMineral.vue"
+import EditMineral from "../components/EditMineral.vue";
 import store from "../store/index";
 import UserDashboard from "../views/UserDashboard.vue";
 import AdminDashboard from "../views/AdminDashboard.vue";

@@ -59,6 +59,7 @@
             placeholder="Enter image URL"
           />
           <button
+            class="remove"
             @click.prevent="removeImageUrl(index)"
             v-if="mineral.imageURLs.length > 1"
           >
@@ -67,13 +68,18 @@
         </div>
         <button @click.prevent="addImageUrl">Add Image URL</button>
       </div>
-      <button type="submit">Update Mineral</button>
+      <div class="form-buttons">
+        <button type="button" class="cancel-button" @click="confirmCancel">
+          Cancel
+        </button>
+        <button type="submit" class="update-button">Update Mineral</button>
+      </div>
     </form>
   </div>
 </template>
 
 <script>
-import MineralService from "../services/MineralService"; // Adjust the path as needed
+import MineralService from "../services/MineralService";
 
 export default {
   data() {
@@ -113,6 +119,8 @@ export default {
   },
   methods: {
     async submitForm() {
+      const confirmUpdate = confirm("Please confirm your changes.");
+      if (!confirmUpdate) return;
       try {
         // Ensure price is a number
         this.mineral.price = Number(this.mineral.price);
@@ -133,6 +141,14 @@ export default {
         console.error("Failed to update mineral:", error);
         alert("Failed to update mineral. Please try again."); // Show an error message to the user
         this.resetForm(); // Clear the form
+      }
+    },
+    confirmCancel() {
+      const confirmLeave = confirm(
+        "Are you sure you want to cancel? Any unsaved changes will be lost."
+      );
+      if (confirmLeave) {
+        this.$router.push("/admin"); // Navigate to the admin dashboard
       }
     },
     resetForm() {
@@ -166,6 +182,14 @@ export default {
   margin-bottom: 1rem;
 }
 
+.remove {
+  margin-left: 2em;
+}
+
+button {
+  margin-top: 1em;
+}
+
 label {
   display: block;
   margin-bottom: 0.5rem;
@@ -183,7 +207,7 @@ select {
 }
 
 button {
-  background-color: #007bff;
+  background-color: black;
   color: white;
   padding: 0.5rem 1rem;
   border: none;
@@ -192,6 +216,35 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #333;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-around; /* Align buttons to the right */
+  gap: 10px; /* Add some space between buttons */
+  margin-top: 1rem;
+}
+
+.form-button {
+  background-color: black;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.form-button:hover {
+  background-color: #333; /* Darken the button on hover */
+}
+
+.cancel-button {
+  background-color: black; /* Keep the cancel button black */
+}
+
+.cancel-button:hover {
+  background-color: #333; /* Darken the cancel button on hover */
 }
 </style>

@@ -43,6 +43,10 @@
         />
       </div>
       <div class="form-group">
+        <h4>
+          Choose the Name of the Mineral you Added in the "Add Mineral" section
+          from the dropdown below
+        </h4>
         <label for="mineralId">Mineral:</label>
         <select
           v-model="auction.mineralId"
@@ -60,6 +64,7 @@
         </select>
       </div>
       <div class="form-group">
+        <h4>Set "Auction Status" to 1 from the dropdown menu below</h4>
         <label for="auctionStatusId">Auction Status ID:</label>
         <input
           type="number"

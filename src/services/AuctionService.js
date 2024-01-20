@@ -14,6 +14,29 @@ class AuctionService {
     }
   }
 
+  async getAuctionForMineral(mineralId) {
+    try {
+      const response = await axios.get(API_URL + "Auction");
+      console.log(response);
+
+      // Find the auction that has the same mineralId as the one passed in
+      const auctionForMineral = response.data.find(
+        (auction) => auction.mineralId === mineralId
+      );
+
+      // If no auction is found, auctionForMineral will be undefined
+      if (!auctionForMineral) {
+        console.log(`No auction found for mineral with ID: ${mineralId}`);
+        return null; // or you can throw an error or return undefined, based on your preference
+      }
+
+      return auctionForMineral;
+    } catch (error) {
+      console.error("Error fetching auctions:", error);
+      throw error;
+    }
+  }
+
   async getAuction(id) {
     try {
       const response = await axios.get(API_URL + "Auction/" + id);

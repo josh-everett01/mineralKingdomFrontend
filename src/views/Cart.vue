@@ -26,14 +26,21 @@
       </div>
     </div>
     <div v-if="!isCartEmpty" class="confirm-address">
+      <h4>
+        We must verify your address to proceed. Please click "I confirm this is
+        my shipping address" to confirm your shipping address.
+      </h4>
       <input type="checkbox" id="confirm-address" v-model="addressConfirmed" />
       <label for="confirm-address">I CONFIRM THIS IS MY SHIPPING ADDRESS</label>
     </div>
     <button
+      v-if="!isCartEmpty"
       @click="initiateCheckout"
-      class="checkout-button"
-      :disabled="!addressConfirmed"
-      :class="{ 'disabled-button': !addressConfirmed }"
+      :disabled="!addressConfirmed || isCheckingOut"
+      :class="[
+        'checkout-button',
+        { 'disabled-button': !addressConfirmed || isCheckingOut },
+      ]"
     >
       Checkout
     </button>
@@ -47,8 +54,8 @@ import StripeService from "../services/StripeService";
 import { loadStripe } from "@stripe/stripe-js";
 import MineralService from "../services/MineralService";
 import CartService from "../services/CartService";
-import BidService from '../services/BidService';
-import AuctionService from '../services/AuctionService';
+import BidService from "../services/BidService";
+import AuctionService from "../services/AuctionService";
 
 // import AuctionService from '../services/AuctionService';
 
@@ -61,6 +68,7 @@ export default {
       total: "0.00", // Initialize total as a data property
       shippingAddress: "", // Store the user's shipping address
       addressConfirmed: false, // Flag to confirm the address
+      isCheckingOut: false,
     };
   },
   computed: {
@@ -78,7 +86,6 @@ export default {
           this.total = "0.00";
         } else {
           this.total = await this.calculateCartTotal(newItems);
-
         }
       },
     },
@@ -103,15 +110,28 @@ export default {
       const auctions = await AuctionService.getAuctions(); // Fetch auctions here
 
       for (const item of items) {
-        const mineralWithPrice = await MineralService.getMineral(item.mineralId);
-        console.log("HEy JOSH" + mineralWithPrice.price);
-        console.log("This is the mineral " + mineralWithPrice.isAuctionItem)
+        const mineralWithPrice = await MineralService.getMineral(
+          item.mineralId
+        );
+        if (!mineralWithPrice) {
+          // Mineral not found, handle it here (e.g., remove the item from the cart)
+          this.handleRemoveItem(item.id);
+          alert(
+            `Mineral with ID ${item.mineralId} is no longer available and has been removed from your cart.`
+          );
+          continue; // Skip this iteration as the mineral is not available
+        }
         if (mineralWithPrice.isAuctionItem) {
-          console.log(mineralWithPrice)
-          const matchingAuction = auctions.find(auction => auction.mineralId === mineralWithPrice.id);
-          console.log("Matching Auction " + matchingAuction)
+          console.log(mineralWithPrice);
+          const matchingAuction = auctions.find(
+            (auction) => auction.mineralId === mineralWithPrice.id
+          );
+          console.log("Matching Auction " + matchingAuction);
           if (matchingAuction) {
-            const winningBid = await BidService.getWinningBidForCompletedAuction(matchingAuction.id); // Ensure you pass the correct auction ID
+            const winningBid =
+              await BidService.getWinningBidForCompletedAuction(
+                matchingAuction.id
+              ); // Ensure you pass the correct auction ID
             console.log("Winning Bid:", winningBid);
             mineralWithPrice.price = winningBid.winningBid.amount; // Update the price based on the winning bid
           }
@@ -142,8 +162,7 @@ export default {
       });
     },
     async initiateCheckout() {
-      console.log("isAuthenticated:", this.isAuthenticated);
-      console.log("getUser:", this.getUser);
+      this.isCheckingOut = true;
       await this.checkCartItems();
       this.total = await this.calculateCartTotal(this.cartItems);
       try {
@@ -166,6 +185,14 @@ export default {
         // Fetch and assign Name and Price for each cart item
         for (const item of this.cartItems) {
           const mineralData = await MineralService.getMineral(item.mineralId);
+          if (!mineralData) {
+            // Mineral not found, handle it here (e.g., remove the item from the cart)
+            this.handleRemoveItem(item.id);
+            alert(
+              `Mineral with ID ${item.mineralId} is no longer available and has been removed from your cart.`
+            );
+            continue; // Skip this iteration as the mineral is not available
+          }
           item.Name = mineralData.name;
           item.Price = mineralData.price;
         }
@@ -196,6 +223,7 @@ export default {
       } catch (error) {
         console.error("Error initiating checkout:", error);
         alert("Failed to initiate checkout. Please try again later.");
+        this.isCheckingOut = false;
       }
     },
     handleRemoveItem(itemId) {
@@ -209,7 +237,9 @@ export default {
     },
     async updateTotal(updatedPrice) {
       // Find the item in the cartItems array and update its price
-      const updatedItem = this.cartItems.find((item) => item.mineralId === updatedPrice.itemId);
+      const updatedItem = this.cartItems.find(
+        (item) => item.mineralId === updatedPrice.itemId
+      );
 
       if (updatedItem) {
         updatedItem.Price = updatedPrice.price;
@@ -217,7 +247,7 @@ export default {
 
       // Recalculate the total based on the updated prices
       this.total = await this.calculateCartTotal(this.cartItems);
-    }
+    },
   },
 };
 </script>
