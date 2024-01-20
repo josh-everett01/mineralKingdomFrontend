@@ -1,133 +1,138 @@
 <template>
-  <div class="auction-details" :key="componentKey">
-    <!-- Image gallery -->
-    <h2 v-if="auction">{{ (auction.title, auction.i) }}</h2>
-    <h3 v-if="mineral">{{ mineral.name }}</h3>
-    <div
-      v-if="mineral"
-      class="image-gallery"
-      @mouseover="showControls = true"
-      @mouseleave="showControls = false"
-    >
-      <button
-        v-if="showControls"
-        class="gallery-control prev"
-        @click="prevImage"
+  <div v-if="auction" class="auction-details">
+    <div class="auction-details" :key="componentKey">
+      <!-- Image gallery -->
+      <h2 v-if="auction">{{ (auction.title, auction.i) }}</h2>
+      <h3 v-if="mineral">{{ mineral.name }}</h3>
+      <div
+        v-if="mineral"
+        class="image-gallery"
+        @mouseover="showControls = true"
+        @mouseleave="showControls = false"
       >
-        &lt;
-      </button>
-      <img :src="activeImage" alt="Mineral Image" class="gallery-image" />
-      <button
-        v-if="showControls"
-        class="gallery-control next"
-        @click="nextImage"
-      >
-        &gt;
-      </button>
-    </div>
-    <div v-if="mineral" class="thumbnails">
-      <img
-        v-for="(url, index) in allImages"
-        :key="index"
-        :src="url"
-        :alt="`Thumbnail ${index + 1}`"
-        class="thumbnail-image"
-        :class="{ active: activeImageIndex === index }"
-        @click="setActiveImage(index)"
-      />
-    </div>
-    <!-- Video player -->
-    <video v-if="mineral && mineral.videoURL" controls class="mineral-video">
-      <source :src="mineral.videoURL" type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
-    <div v-if="bids.length" class="bid-list">
-      <h3>Bid History</h3>
-      <ul>
-        <li
-          v-for="(bid, index) in sortedAndLimitedBids"
-          :key="index"
-          :class="{ 'green-text': isMyBid(bid), 'red-text': !isMyBid(bid) }"
+        <button
+          v-if="showControls"
+          class="gallery-control prev"
+          @click="prevImage"
         >
-          ${{ bid.amount.toFixed(2) }} by {{ bid.username }} on
-          {{ formatBidTime(bid.bidTime) }}
-        </li>
-      </ul>
-    </div>
-
-    <p v-if="auction">{{ auction.description }}</p>
-    <p v-if="!auction">Loading auction details...</p>
-    <div v-if="auction" class="auction-info">
-      <span v-if="auction && auction.startingPrice">
-        Starting Price: ${{ auction.startingPrice.toFixed(2) }}
-      </span>
-      <span v-if="auction && !auctionHasStarted">
-        Starts on: {{ new Date(auction.startTime).toLocaleString() }}
-      </span>
-      <span v-if="auction && auctionHasEnded">
-        Started on: {{ new Date(auction.startTime).toLocaleString() }}
-      </span>
-    </div>
-    <!-- Bidding section -->
-    <div
-      v-if="auction && auctionHasStarted && !auctionHasEnded"
-      class="bid-section"
-    >
-      <div v-if="successMessage" class="success-message">
-        {{ successMessage }}
+          &lt;
+        </button>
+        <img :src="activeImage" alt="Mineral Image" class="gallery-image" />
+        <button
+          v-if="showControls"
+          class="gallery-control next"
+          @click="nextImage"
+        >
+          &gt;
+        </button>
       </div>
-      <span v-if="currentHighestBid && currentHighestBid.amount">
-        Current Highest Bid:
-        <span :class="{ 'green-text': true }"
-          >${{ currentHighestBid.amount.toFixed(2) }}</span
-        ><br />
-        <span v-if="isMyBid(currentHighestBid)" class="green-text"
-          >You currently have the highest bid!</span
-        >
-      </span>
-      <span v-if="auction && !auctionHasEnded">
-        Auction End: {{ new Date(auction.endTime).toLocaleString() }}
-      </span>
-      <span v-else>No bids yet</span>
-      <input
-        class="BidpriceField"
-        type="number"
-        v-model.number="newBidAmount"
-        :min="
-          auction
-            ? currentHighestBid
-              ? currentHighestBid.amount + bidIncrement
-              : auction.startingPrice
-            : 0
-        "
-        placeholder="Enter your bid"
-      />
-      <button @click="placeBid" class="bid-button">Place Bid</button>
-    </div>
-    <div
-      v-if="auctionHasEnded && isMyBid(currentHighestBid)"
-      class="auction-ended-section"
-    >
-      <h2>Congratulations! You won this auction.</h2>
-      <p>
-        Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
-        {{ currentHighestBid.username }}
-      </p>
-      <p>Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}</p>
-      <p>
-        You will receive a confirmation email shortly once your item has been
-        moved to your Cart.
-      </p>
-    </div>
-    <div v-if="auction && auctionHasEnded" class="auction-ended-section">
-      <h2>Auction Winner</h2>
-      <p>
-        Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
-        {{ currentHighestBid.username }}
-      </p>
-      <p>Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}</p>
-    </div>
-    <!-- <div class="auction-table">
+      <div v-if="mineral" class="thumbnails">
+        <img
+          v-for="(url, index) in allImages"
+          :key="index"
+          :src="url"
+          :alt="`Thumbnail ${index + 1}`"
+          class="thumbnail-image"
+          :class="{ active: activeImageIndex === index }"
+          @click="setActiveImage(index)"
+        />
+      </div>
+      <!-- Video player -->
+      <video v-if="mineral && mineral.videoURL" controls class="mineral-video">
+        <source :src="mineral.videoURL" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <div v-if="bids.length" class="bid-list">
+        <h3>Bid History</h3>
+        <ul>
+          <li
+            v-for="(bid, index) in sortedAndLimitedBids"
+            :key="index"
+            :class="{ 'green-text': isMyBid(bid), 'red-text': !isMyBid(bid) }"
+          >
+            ${{ bid.amount.toFixed(2) }} by {{ bid.username }} on
+            {{ formatBidTime(bid.bidTime) }}
+          </li>
+        </ul>
+      </div>
+
+      <p v-if="auction">{{ auction.description }}</p>
+      <p v-if="!auction">Loading auction details...</p>
+      <div v-if="auction" class="auction-info">
+        <span v-if="auction && auction.startingPrice">
+          Starting Price: ${{ auction.startingPrice.toFixed(2) }}
+        </span>
+        <span v-if="auction && !auctionHasStarted">
+          Starts on: {{ new Date(auction.startTime).toLocaleString() }}
+        </span>
+        <span v-if="auction && auctionHasEnded">
+          Started on: {{ new Date(auction.startTime).toLocaleString() }}
+        </span>
+      </div>
+      <!-- Bidding section -->
+      <div
+        v-if="auction && auctionHasStarted && !auctionHasEnded"
+        class="bid-section"
+      >
+        <div v-if="successMessage" class="success-message">
+          {{ successMessage }}
+        </div>
+        <span v-if="currentHighestBid && currentHighestBid.amount">
+          Current Highest Bid:
+          <span :class="{ 'green-text': true }"
+            >${{ currentHighestBid.amount.toFixed(2) }}</span
+          ><br />
+          <span v-if="isMyBid(currentHighestBid)" class="green-text"
+            >You currently have the highest bid!</span
+          >
+        </span>
+        <span v-if="auction && !auctionHasEnded">
+          Auction End: {{ new Date(auction.endTime).toLocaleString() }}
+        </span>
+        <span v-else>No bids yet</span>
+        <input
+          class="BidpriceField"
+          type="number"
+          v-model.number="newBidAmount"
+          :min="
+            auction
+              ? currentHighestBid
+                ? currentHighestBid.amount + bidIncrement
+                : auction.startingPrice
+              : 0
+          "
+          placeholder="Enter your bid"
+        />
+        <button @click="placeBid" class="bid-button">Place Bid</button>
+      </div>
+      <div
+        v-if="auctionHasEnded && isMyBid(currentHighestBid)"
+        class="auction-ended-section"
+      >
+        <h2>Congratulations! You won this auction.</h2>
+        <p>
+          Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
+          {{ currentHighestBid.username }}
+        </p>
+        <p>
+          Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}
+        </p>
+        <p>
+          You will receive a confirmation email shortly once your item has been
+          moved to your Cart.
+        </p>
+      </div>
+      <div v-if="auction && auctionHasEnded" class="auction-ended-section">
+        <h2>Auction Winner</h2>
+        <p>
+          Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
+          {{ currentHighestBid.username }}
+        </p>
+        <p>
+          Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}
+        </p>
+      </div>
+      <!-- <div class="auction-table">
       <div class="table-row">
         <div class="table-cell">Starting Price:</div>
         <div class="table-cell">
@@ -150,7 +155,9 @@
         <div class="table-cell">{{ countdown }}</div>
       </div>
     </div> -->
+    </div>
   </div>
+  <div v-else>Loading auction details...</div>
 </template>
 
 <script>
@@ -160,7 +167,7 @@ import AuctionService from "../services/AuctionService";
 import UserService from "../services/UserService";
 import { mapGetters } from "vuex";
 import CartService from "../services/CartService";
-import Vue from 'vue';
+import Vue from "vue";
 
 export default {
   data() {
@@ -234,15 +241,19 @@ export default {
   methods: {
     async fetchCurrentHighestBid() {
       try {
-        const response = await BidService.getCurrentWinningBidForAuction(this.auction.id);
+        const response = await BidService.getCurrentWinningBidForAuction(
+          this.auction.id
+        );
         this.componentKey++;
         if (response && response.winningBid) {
-          const user = await UserService.getUserById(response.winningBid.userId);
-          Vue.set(this.currentHighestBid, 'amount', response.winningBid.amount);
-          Vue.set(this.currentHighestBid, 'username', user.username);
+          const user = await UserService.getUserById(
+            response.winningBid.userId
+          );
+          Vue.set(this.currentHighestBid, "amount", response.winningBid.amount);
+          Vue.set(this.currentHighestBid, "username", user.username);
         } else {
-          Vue.set(this.currentHighestBid, 'amount', 0);
-          Vue.set(this.currentHighestBid, 'username', '');
+          Vue.set(this.currentHighestBid, "amount", 0);
+          Vue.set(this.currentHighestBid, "username", "");
         }
       } catch (error) {
         console.error("Error fetching current highest bid:", error);
@@ -305,7 +316,7 @@ export default {
       const minimumBid = this.currentHighestBid
         ? this.currentHighestBid.amount + this.bidIncrement
         : this.auction.startingPrice;
-      console.log("Hey Josh here is the minimum bid: " + minimumBid.amount)
+      console.log("Hey Josh here is the minimum bid: " + minimumBid.amount);
       if (this.newBidAmount < this.auction.startingPrice) {
         alert(`Your bid must be at least $${this.auction.startingPrice + 1}.`);
         return;
@@ -316,7 +327,11 @@ export default {
         return;
       }
 
-      const confirmBid = confirm(`Are you sure you want to place a bid of $${this.newBidAmount.toFixed(2)}?`);
+      const confirmBid = confirm(
+        `Are you sure you want to place a bid of $${this.newBidAmount.toFixed(
+          2
+        )}?`
+      );
       if (!confirmBid) {
         return;
       }
@@ -341,7 +356,6 @@ export default {
           await this.fetchBidList();
           await this.fetchCurrentHighestBid(); // Fe
           this.componentKey++;
-
         } catch (error) {
           console.error("Error placing bid:", error);
           alert("There was an error placing your bid. Please try again.");
@@ -421,9 +435,13 @@ export default {
       try {
         await this.fetchBidList();
         const auctionData = await AuctionService.getAuction(auctionId);
-        this.auction = auctionData;
-        if (!this.previousEndTime) {
-          this.previousEndTime = new Date(this.auction.endTime).getTime();
+        if (auctionData) {
+          this.auction = auctionData;
+          if (!this.previousEndTime) {
+            this.previousEndTime = new Date(this.auction.endTime).getTime();
+          }
+        } else {
+          console.error("Failed to fetch auction data or data is empty");
         }
       } catch (error) {
         console.error("Error fetching auction details:", error);
@@ -475,28 +493,31 @@ export default {
   },
   async created() {
     const auctionId = this.$route.params.id; // Get the id from the route parameters
-    // Set up periodic polling to refresh auction details
-    this.auctionRefreshInterval = setInterval(() => {
-      this.refreshAuctionDetails();
-      this.refreshCartData();
-    }, 10000);
+
     if (auctionId) {
-      this.loading = true; // Start loading
-      try {
-        await this.fetchAuctionDetails(auctionId);
-        if (this.auction) {
-          await this.fetchMineralData();
-          await this.fetchBidList();
-          await this.fetchCurrentHighestBid();
-          if (this.auction.auctionHasEnded) {
-            await this.fetchWinningBid();
+      // Set up periodic polling to refresh auction details
+      this.auctionRefreshInterval = setInterval(() => {
+        this.refreshAuctionDetails();
+        this.refreshCartData();
+      }, 10000);
+      if (auctionId) {
+        this.loading = true; // Start loading
+        try {
+          await this.fetchAuctionDetails(auctionId);
+          if (this.auction) {
+            await this.fetchMineralData();
+            await this.fetchBidList();
+            await this.fetchCurrentHighestBid();
+            if (this.auction.auctionHasEnded) {
+              await this.fetchWinningBid();
+            }
           }
+        } catch (error) {
+          console.error("Error occurred while fetching data:", error);
+          // Handle the error appropriately
+        } finally {
+          this.loading = false; // End loading, regardless of success or error
         }
-      } catch (error) {
-        console.error("Error occurred while fetching data:", error);
-        // Handle the error appropriately
-      } finally {
-        this.loading = false; // End loading, regardless of success or error
       }
     } else {
       console.error("Auction ID is not available in route parameters");

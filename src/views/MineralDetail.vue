@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isAvailable && currentMineral">
+  <div v-if="currentMineral">
     <h2>{{ currentMineral.name }}</h2>
     <!-- Image gallery -->
     <div
@@ -41,7 +41,14 @@
     </video>
     <p>{{ currentMineral.description }}</p>
     <p>${{ currentMineral.price }}</p>
-    <button @click="purchaseMineral" class="buy-now-button">BUY NOW</button>
+    <button
+      @click="purchaseMineral"
+      class="buy-now-button"
+      :disabled="!isAvailable"
+    >
+      BUY NOW
+    </button>
+    <p v-if="!isAvailable" class="sold-message">This mineral has been sold.</p>
   </div>
   <div v-else-if="isLoading">Loading...</div>
   <div v-else>
@@ -115,6 +122,15 @@ export default {
           );
           return;
         }
+
+        // Add confirmation dialog
+        const confirmPurchase = confirm(
+          `Are you sure you want to buy ${this.currentMineral.name} for $${this.currentMineral.price}?`
+        );
+        if (!confirmPurchase) {
+          return; // If user does not confirm, exit the function
+        }
+
         const stripePublishableKey = process.env.VUE_APP_STRIPE_PUBLISHABLE_KEY;
         const purchaseData = {
           userId: this.getUser.id,
@@ -151,6 +167,10 @@ export default {
   },
   async created() {
     try {
+      if (!this.id) {
+        this.isLoading = true;
+      }
+      console.log(this.id);
       await this.fetchMineral(this.id);
       if (this.error) {
         console.error("Error loading mineral details:", this.error);
@@ -191,6 +211,12 @@ export default {
 }
 .buy-now-button:hover {
   background-color: #333;
+}
+
+.sold-message {
+  color: red; /* or any color you prefer */
+  font-weight: bold;
+  margin-top: 20px;
 }
 
 .gallery-control {
