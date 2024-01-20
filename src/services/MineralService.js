@@ -6,9 +6,6 @@ class MineralService {
   async getMinerals() {
     try {
       const response = await axios.get(API_URL + "Minerals");
-      response.data.forEach((element) => {
-        console.log(element);
-      });
       console.log("Response: " + response.data);
       return response.data;
     } catch (error) {
@@ -20,7 +17,7 @@ class MineralService {
   async getMineral(id) {
     if (!id) {
       console.error("Invalid or missing mineral ID:", id);
-      return; // Return early to prevent API call with invalid URL
+      return null; // Return null to indicate that the mineral was not found
     }
     try {
       console.log("Mineral ID:", id);
@@ -28,6 +25,10 @@ class MineralService {
       console.log("Mineral data fetched:", response.data);
       return response.data;
     } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.warn(`Mineral with ID ${id} not found.`);
+        return null; // Return null to indicate that the mineral was not found
+      }
       console.error("Error fetching mineral:", error);
       throw error;
     }
@@ -81,12 +82,30 @@ class MineralService {
 
   async updateMineral(mineralId, mineralData) {
     try {
-      const response = await axios.put(API_URL + "Minerals/" + mineralId, mineralData);
+      const response = await axios.put(
+        API_URL + "Minerals/" + mineralId,
+        mineralData
+      );
       console.log("Mineral updated:", response.data);
       return response.data;
     } catch (error) {
       console.error("Error updating mineral:", error);
       throw error;
+    }
+  }
+
+  async deleteMineral(mineralId) {
+    if (!mineralId) {
+      console.error("Invalid or missing mineral ID:", mineralId);
+      return; // Return early to prevent API call with invalid URL
+    }
+    try {
+      const response = await axios.delete(API_URL + "Minerals/" + mineralId);
+      console.log(`Mineral with ID: ${mineralId} deleted successfully.`);
+      return response.data; // Return the response data (if any)
+    } catch (error) {
+      console.error(`Error deleting mineral with ID: ${mineralId}:`, error);
+      throw error; // Rethrow the error to handle it in the calling method
     }
   }
 }
