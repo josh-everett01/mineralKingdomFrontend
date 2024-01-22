@@ -5,6 +5,7 @@ import createPersistedState from "vuex-persistedstate";
 import minerals from "../store/modules/minerals";
 import auctions from "./modules/auctions";
 import cart from "./modules/cart";
+import bids from "./modules/bids";
 import correspondence from "./modules/correspondence";
 import MineralService from "../services/MineralService";
 import AuthService from "../services/AuthService";
@@ -24,6 +25,7 @@ export default new Vuex.Store({
     auctions,
     cart,
     correspondence,
+    bids,
   },
   state: {
     user: null,

@@ -94,7 +94,11 @@ export default {
     async fetchAuctionData() {
       try {
         const auction = await AuctionService.getAuction(this.id);
-        this.auctionData = auction;
+        this.auctionData = {
+          ...auction,
+          startTime: this.formatDateTime(auction.startTime),
+          endTime: this.formatDateTime(auction.endTime),
+        };
         const mineral = await MineralService.getMineral(auction.mineralId);
         this.mineralName = mineral.name;
       } catch (error) {
@@ -102,12 +106,18 @@ export default {
         // Handle error (e.g., show an error message)
       }
     },
+    formatDateTime(isoString) {
+      const date = new Date(isoString);
+      return date.toISOString().slice(0, 16); // yyyy-MM-ddThh:mm format
+    },
     async submitForm() {
       try {
-        this.auctionData.endTime = new Date(
-          this.auctionData.endTime
-        ).toISOString();
-        await AuctionService.updateAuction(this.id, this.auctionData);
+        const updatedAuctionData = {
+          ...this.auctionData,
+          startTime: new Date(this.auctionData.startTime).toISOString(),
+          endTime: new Date(this.auctionData.endTime).toISOString(),
+        };
+        await AuctionService.updateAuction(this.id, updatedAuctionData);
         // Handle success (e.g., show a message or redirect to a confirmation page)
       } catch (error) {
         console.error("Error updating auction:", error);

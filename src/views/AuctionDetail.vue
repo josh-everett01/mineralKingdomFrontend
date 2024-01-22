@@ -42,7 +42,7 @@
         <source :src="mineral.videoURL" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
-      <div v-if="bids.length" class="bid-list">
+      <div v-if="allBids.length" class="bid-list">
         <h3>Bid History</h3>
         <ul>
           <li
@@ -77,15 +77,20 @@
         <div v-if="successMessage" class="success-message">
           {{ successMessage }}
         </div>
-        <span v-if="currentHighestBid && currentHighestBid.amount">
+        <span v-if="highestBidDetails && highestBidDetails.amount">
           Current Highest Bid:
-          <span :class="{ 'green-text': true }"
-            >${{ currentHighestBid.amount.toFixed(2) }}</span
+          <span
+            :class="{
+              'green-text': isMyBid(highestBidDetails),
+              'red-text': !isMyBid(highestBidDetails),
+            }"
+            >${{ highestBidDetails.amount.toFixed(2) }}</span
           ><br />
-          <span v-if="isMyBid(currentHighestBid)" class="green-text"
+          <span v-if="isMyBid(highestBidDetails)" class="green-text"
             >You currently have the highest bid!</span
           >
         </span>
+
         <span v-if="auction && !auctionHasEnded">
           Auction End: {{ new Date(auction.endTime).toLocaleString() }}
         </span>
@@ -106,13 +111,13 @@
         <button @click="placeBid" class="bid-button">Place Bid</button>
       </div>
       <div
-        v-if="auctionHasEnded && isMyBid(currentHighestBid)"
+        v-if="auctionHasEnded && isMyBid(winningBidWithUser)"
         class="auction-ended-section"
       >
         <h2>Congratulations! You won this auction.</h2>
         <p>
-          Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
-          {{ currentHighestBid.username }}
+          Winning Bid: ${{ winningBidWithUser.amount.toFixed(2) }} by
+          {{ winningBidWithUser.user.username }}
         </p>
         <p>
           Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}
@@ -122,39 +127,20 @@
           moved to your Cart.
         </p>
       </div>
-      <div v-if="auction && auctionHasEnded" class="auction-ended-section">
-        <h2>Auction Winner</h2>
+      <div
+        v-if="winningBidWithUser && auctionHasEnded"
+        class="auction-ended-section"
+      >
+        <h2>This Auction has ended.</h2>
         <p>
-          Winning Bid: ${{ currentHighestBid.amount.toFixed(2) }} by
-          {{ currentHighestBid.username }}
+          Winning Bid: ${{ winningBidWithUser.amount.toFixed(2) }} <br />
+          by UserName:
+          {{ winningBidWithUser.user.username }}
         </p>
         <p>
           Auction Ended at: {{ new Date(auction.endTime).toLocaleString() }}
         </p>
       </div>
-      <!-- <div class="auction-table">
-      <div class="table-row">
-        <div class="table-cell">Starting Price:</div>
-        <div class="table-cell">
-          ${{ auction ? `${auction.startingPrice}` : "Loading..." }}
-        </div>
-      </div>
-      <div class="table-row">
-        <div class="table-cell">Current Highest Bid:</div>
-        <div class="table-cell">
-          ${{ currentHighestBid.amount }} by
-          {{ currentHighestBid.username || "Loading..." }}
-        </div>
-      </div>
-      <div class="table-row">
-        <div class="table-cell">Bid Increment:</div>
-        <div class="table-cell">${{ bidIncrement }}</div>
-      </div>
-      <div class="table-row">
-        <div class="table-cell">Auction Ends In:</div>
-        <div class="table-cell">{{ countdown }}</div>
-      </div>
-    </div> -->
     </div>
   </div>
   <div v-else>Loading auction details...</div>
@@ -162,12 +148,11 @@
 
 <script>
 import MineralService from "../services/MineralService";
-import BidService from "../services/BidService";
 import AuctionService from "../services/AuctionService";
-import UserService from "../services/UserService";
-import { mapGetters } from "vuex";
+// import UserService from "../services/UserService";
 import CartService from "../services/CartService";
-import Vue from "vue";
+import { webSocketService } from "../services/WebSocketService";
+import { mapState, mapGetters, mapActions } from "vuex";
 
 export default {
   data() {
@@ -177,7 +162,7 @@ export default {
       activeImageIndex: 0,
       showControls: false,
       newBidAmount: 0,
-      bidIncrement: 10, // Set your required bid increment here
+      bidIncrement: 5, // Set your required bid increment here
       showBidding: true, // Show bidding section by default
       auction: null,
       countdown: "",
@@ -194,11 +179,15 @@ export default {
   },
   watch: {
     auction(newVal) {
-      if (newVal) {
-        this.fetchBidList();
+      if (newVal && newVal.id) {
+        this.fetchBids(newVal.id); // Use Vuex action to fetch bids
         this.fetchMineralData();
-        this.fetchCurrentHighestBid();
+        this.updateHighestBid(newVal.id); // Use Vuex action to update the highest bid
       }
+    },
+    "currentAuction.currentHighestBid"(newBid) {
+      // Perform actions in response to the new bid
+      console.log(newBid);
     },
     "auction.endTime"(newEndTime, oldEndTime) {
       if (newEndTime !== oldEndTime) {
@@ -208,18 +197,41 @@ export default {
     },
   },
   computed: {
-    ...mapGetters(["getUser"]),
-    sortedAndLimitedBids() {
-      // Create a copy of the bids array, sort it, and then slice the last 10
-      return [...this.bids].sort((a, b) => a.amount - b.amount).slice(-10);
-    },
+    ...mapGetters({
+      getUser: "getUser", // Now it's mapped from the root state
+      // ... other getters ...
+    }),
+    ...mapState("bids", {
+      allBids: (state) => state.bids,
+      highestBid: (state) => state.highestBid,
+      winningBidWithUser: (state) => state.winningBidWithUser
+    }),
     allImages() {
       return this.mineral
         ? [this.mineral.imageURL, ...this.mineral.imageURLs].filter(Boolean)
         : [];
     },
+    sortedAndLimitedBids() {
+      // Use allBids from Vuex store
+      const sortedBids = [...this.allBids]
+        .sort((a, b) => a.amount - b.amount)
+        .slice(-10);
+      console.log("Highest Bid:", this.highestBid);
+      console.log("Is My Bid:", this.isMyBid(this.highestBid));
+      return sortedBids;
+    },
     activeImage() {
       return this.allImages[this.activeImageIndex];
+    },
+    highestBidDetails() {
+      if (
+        this.highestBid &&
+        this.highestBid.data &&
+        this.highestBid.data.winningBid
+      ) {
+        return this.highestBid.data.winningBid;
+      }
+      return null;
     },
     // auctionHasEnded() {
     //   if (!this.auction || !this.auction.endTime) {
@@ -237,28 +249,63 @@ export default {
       const startTime = new Date(this.auction.startTime);
       return now >= startTime;
     },
+    currentAuction() {
+      if (!this.auctions || !this.auctionId) {
+        return null; // or a default object structure that matches an auction
+      }
+      return (
+        this.auctions.find((auction) => auction.id === this.auctionId) || null
+      );
+    },
+    bidCount() {
+      return this.currentAuction ? this.currentAuction.bidCount : 0;
+    },
   },
   methods: {
-    async fetchCurrentHighestBid() {
-      try {
-        const response = await BidService.getCurrentWinningBidForAuction(
-          this.auction.id
-        );
-        this.componentKey++;
-        if (response && response.winningBid) {
-          const user = await UserService.getUserById(
-            response.winningBid.userId
-          );
-          Vue.set(this.currentHighestBid, "amount", response.winningBid.amount);
-          Vue.set(this.currentHighestBid, "username", user.username);
-        } else {
-          Vue.set(this.currentHighestBid, "amount", 0);
-          Vue.set(this.currentHighestBid, "username", "");
-        }
-      } catch (error) {
-        console.error("Error fetching current highest bid:", error);
+    // async fetchCurrentHighestBid() {
+    //   try {
+    //     const response = await BidService.getCurrentWinningBidForAuction(
+    //       this.auction.id
+    //     );
+    //     if (response && response.winningBid) {
+    //       const user = await UserService.getUserById(
+    //         response.winningBid.userId
+    //       );
+    //       Vue.set(this.currentHighestBid, "amount", response.winningBid.amount);
+    //       Vue.set(this.currentHighestBid, "username", user.username);
+    //     } else {
+    //       Vue.set(this.currentHighestBid, "amount", 0);
+    //       Vue.set(this.currentHighestBid, "username", "");
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching current highest bid:", error);
+    //   }
+    // },
+    ...mapActions("bids", {
+      fetchBids: "fetchBids",
+      addBid: "addBid",
+      updateHighestBid: "updateHighestBid",
+      fetchWinningBidForCompletedAuction: "fetchWinningBidForCompletedAuction",
+      // ... other actions if needed ...
+    }),
+    handleWebSocketMessage(message) {
+      if (message.Type === "NEW_BID") {
+        // this.addBid({ bidData: message.data, auctionId: this.auction.id });
+        // Refetch bids to update the bid list
+        this.fetchBids(this.auction.id);
+
+        // Update highest bid if necessary
+        this.updateHighestBid(this.auction.id);
       }
     },
+    async initializeWebSocket() {
+      webSocketService.connect("wss://localhost:7240/ws");
+      webSocketService.onMessage((data) => {
+        const message = JSON.parse(data);
+        this.handleWebSocketMessage(message);
+      });
+    },
+
     async fetchMineralData() {
       console.log("Mineral Data in AuctionDetail: " + this.auction);
       if (this.auction.mineralId) {
@@ -271,24 +318,66 @@ export default {
         }
       }
     },
-    async fetchWinningBid() {
-      if (this.auction && this.auctionHasEnded) {
-        try {
-          const winningBid = await BidService.getWinningBidForCompletedAuction(
-            this.auction.id
-          );
-          if (winningBid) {
-            const user = await UserService.getUserById(winningBid.userId);
-            this.currentHighestBid = {
-              amount: winningBid.amount,
-              username: user.username,
-            };
+    async handleAuctionUpdate(data) {
+      console.log("AUCTIONDATA BRO: " + data);
+      const updateType = data.Type;
+
+      switch (updateType) {
+        case "NEW_BID": {
+          const newBid = data.Data;
+          this.bids = [...this.bids, newBid];
+          if (newBid.Amount > this.currentHighestBid.amount) {
+            this.currentHighestBid.amount = newBid.Amount;
+            this.currentHighestBid.username = newBid.Username; // Assuming Username is the correct field
+            this.successMessage = `New highest bid: $${newBid.Amount} by ${newBid.Username}`;
           }
-        } catch (error) {
-          console.error("Error fetching winning bid:", error);
+          break;
         }
+
+        case "AUCTION_END":
+          // Auction ended
+          this.auctionHasEnded = true;
+          this.successMessage = "Auction has ended";
+          await this.fetchWinningBidForCompletedAuction(this.auction.id);
+          break;
+
+        case "AUCTION_TIME_UPDATE":
+          // Auction time was updated
+          this.auction.endTime = new Date(data.newEndTime);
+          this.updateCountdown();
+          break;
+
+        // ... handle other message types as needed
+
+        default:
+          console.warn("Received unknown message type:", updateType);
+      }
+
+      // Clear success message after a delay
+      if (this.successMessage) {
+        setTimeout(() => {
+          this.successMessage = "";
+        }, 5000);
       }
     },
+    // async fetchWinningBid() {
+    //   if (this.auction && this.auctionHasEnded) {
+    //     try {
+    //       const winningBid = await BidService.getWinningBidForCompletedAuction(
+    //         this.auction.id
+    //       );
+    //       if (winningBid) {
+    //         const user = await UserService.getUserById(winningBid.userId);
+    //         this.currentHighestBid = {
+    //           amount: winningBid.amount,
+    //           username: user.username,
+    //         };
+    //       }
+    //     } catch (error) {
+    //       console.error("Error fetching winning bid:", error);
+    //     }
+    //   }
+    // },
     addToCart(mineral) {
       if (!this.isAuthenticated) {
         alert("Please log in to add items to the cart");
@@ -338,10 +427,13 @@ export default {
 
       if (this.getUser) {
         try {
-          await BidService.createBid({
-            amount: this.newBidAmount,
-            bidTime: new Date().toISOString(),
-            userId: this.getUser.id, // Replace with actual user ID
+          await this.addBid({
+            bidData: {
+              amount: this.newBidAmount,
+              bidTime: new Date().toISOString(),
+              userId: this.getUser.id,
+              auctionId: this.auction.id,
+            },
             auctionId: this.auction.id,
           });
           this.currentHighestBid = { amount: this.newBidAmount };
@@ -353,9 +445,8 @@ export default {
             this.successMessage = "";
           }, 5000); // Change 5000 to 7000 for 7 seconds
 
-          await this.fetchBidList();
-          await this.fetchCurrentHighestBid(); // Fe
-          this.componentKey++;
+          await this.fetchBids(this.auction.id);
+          // await this.fetchCurrentHighestBid();
         } catch (error) {
           console.error("Error placing bid:", error);
           alert("There was an error placing your bid. Please try again.");
@@ -377,63 +468,37 @@ export default {
       this.activeImageIndex = index;
     },
     updateCountdown() {
-      const endTime = new Date(this.auction.endTime).getTime();
-      const now = Date.now();
-      const distance = endTime - now;
+      if (this.auction) {
+        const endTime = new Date(this.auction.endTime).getTime();
+        const now = Date.now();
+        const distance = endTime - now;
 
-      if (distance < 0) {
-        this.countdown = "Auction has ended";
-        clearInterval(this.countdownInterval);
-        return;
-      }
+        if (distance < 0) {
+          this.countdown = "Auction has ended";
+          clearInterval(this.countdownInterval);
+          return;
+        }
 
-      // Time calculations for days, hours, minutes and seconds
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      // Output the result in a string format
-      this.countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    },
-    async fetchBidList() {
-      if (!this.auction || !this.auction.id) {
-        console.error("Auction or auction ID is undefined");
-        return;
-      }
-
-      try {
-        const bids = await BidService.getBidsForAuction(this.auction.id);
-        const bidsWithUsernames = await Promise.all(
-          bids.map(async (bid) => {
-            if (!bid.userId) {
-              console.error("Bid's user ID is undefined");
-              return { ...bid, username: "Unknown" };
-            }
-            try {
-              const user = await UserService.getUserById(bid.userId);
-              return { ...bid, username: user.username };
-            } catch (error) {
-              console.error("Error fetching user for bid:", error);
-              return { ...bid, username: "Unknown" };
-            }
-          })
+        // Time calculations for days, hours, minutes and seconds
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
         );
-        this.bids = [...bidsWithUsernames];
-        this.componentKey++;
-      } catch (error) {
-        console.error("Error fetching bids:", error);
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Output the result in a string format
+        this.countdown = `${days}d ${hours}h ${minutes}m ${seconds}s`;
       }
     },
+
     formatBidTime(bidTime) {
       const date = new Date(bidTime);
       return date.toLocaleString(); // Adjust formatting as needed
     },
     async fetchAuctionDetails(auctionId) {
       try {
-        await this.fetchBidList();
+        await this.fetchBids(auctionId);
         const auctionData = await AuctionService.getAuction(auctionId);
         if (auctionData) {
           this.auction = auctionData;
@@ -457,19 +522,21 @@ export default {
       }
     },
     updateAuctionStatus() {
-      const now = new Date();
-      const endTime = new Date(this.auction.endTime);
-      const hasEnded = now >= endTime;
+      if (this.auction) {
+        const now = new Date();
+        const endTime = new Date(this.auction.endTime);
+        const hasEnded = now >= endTime;
 
-      if (hasEnded && !this.auctionHasEnded) {
-        this.auctionHasEnded = true;
+        if (hasEnded && !this.auctionHasEnded) {
+          this.auctionHasEnded = true;
+        }
       }
     },
     async refreshAuctionDetails() {
       try {
         const auctionData = await AuctionService.getAuction(this.auction.id);
         await this.fetchBidList();
-        await this.fetchCurrentHighestBid();
+        // await this.fetchCurrentHighestBid();
         this.auction.endTime = auctionData.endTime;
       } catch (error) {
         console.error("Error refreshing auction details:", error);
@@ -488,29 +555,37 @@ export default {
       }
     },
     isMyBid(bid) {
-      return bid.username === this.getUser.username;
+      if (bid != undefined) {
+        return bid.userId === this.getUser.id;
+      } else {
+        return this.getUser.id
+      }
+      // console.log("GETUSER: " + this.getUser.id);
+
     },
   },
   async created() {
+    console.log("COMING TO YOU FROM THE CREATED lifecycle hook")
     const auctionId = this.$route.params.id; // Get the id from the route parameters
-
+    if (this.auctionHasEnded) {
+      console.log(this.getUser);
+      this.fetchWinningBidForCompletedAuction(this.auction.id);
+    }
     if (auctionId) {
       // Set up periodic polling to refresh auction details
-      this.auctionRefreshInterval = setInterval(() => {
-        this.refreshAuctionDetails();
-        this.refreshCartData();
-      }, 10000);
+      // this.auctionRefreshInterval = setInterval(() => {
+      //   this.refreshAuctionDetails();
+      //   this.refreshCartData();
+      // }, 10000);
       if (auctionId) {
         this.loading = true; // Start loading
         try {
+          await this.initializeWebSocket();
           await this.fetchAuctionDetails(auctionId);
-          if (this.auction) {
-            await this.fetchMineralData();
-            await this.fetchBidList();
-            await this.fetchCurrentHighestBid();
-            if (this.auction.auctionHasEnded) {
-              await this.fetchWinningBid();
-            }
+          await this.fetchBids(auctionId);
+          await this.updateHighestBid(auctionId);
+          if (this.auction && this.auctionHasEnded) {
+            await this.fetchWinningBidForCompletedAuction(auctionId);
           }
         } catch (error) {
           console.error("Error occurred while fetching data:", error);
@@ -524,6 +599,8 @@ export default {
     }
   },
   mounted() {
+    console.log("COMING TO YOU LIVE FROM THE MOUNTED HOOK ");
+    console.log(this.getUser);
     this.countdownInterval = setInterval(this.updateCountdown, 1000);
     this.auctionStatusInterval = setInterval(this.updateAuctionStatus, 1000);
   },
@@ -532,6 +609,7 @@ export default {
     clearInterval(this.auctionDetailInterval);
     clearInterval(this.auctionStatusInterval);
     clearInterval(this.auctionRefreshInterval);
+    webSocketService.disconnect();
   },
 };
 </script>
