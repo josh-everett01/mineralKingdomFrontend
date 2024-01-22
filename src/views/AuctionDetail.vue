@@ -303,7 +303,7 @@ export default {
         /^https:/,
         "wss:"
       ).replace(/^http:/, "ws:");
-      const wsUrl = `${wsBaseUrl}/ws`; // Append '/ws' to the base URL
+      const wsUrl = `${wsBaseUrl}ws`; // Append '/ws' to the base URL
       webSocketService.connect(wsUrl);
       webSocketService.onMessage((data) => {
         const message = JSON.parse(data);
