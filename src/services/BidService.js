@@ -16,7 +16,7 @@ class BidService {
 
   async getWinningBidForCompletedAuction(auctionId) {
     try {
-      console.log(auctionId);
+      console.log("WINNINGBIDFORCZOMPEL" + auctionId);
       const response = await axios.get(
         API_URL + "Auction/" + auctionId + "/completed/winning-bid"
       );
@@ -33,7 +33,8 @@ class BidService {
       const response = await axios.get(
         API_URL + "Auction/" + auctionId + "/winning-bid"
       );
-      return response.data;
+      console.log("CURRENTHIGHESTBDIRESPONSE: " + { response });
+      return response;
     } catch (error) {
       console.error("Error fetching current winning bid:", error);
       throw error;

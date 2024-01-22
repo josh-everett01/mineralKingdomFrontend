@@ -1,5 +1,6 @@
 // src/store/modules/auctions.js
 import AuctionService from "../../services/AuctionService";
+import Vue from 'vue';
 
 const state = {
   auctions: [],
@@ -17,6 +18,15 @@ const mutations = {
   SET_ERROR(state, error) {
     state.error = error;
   },
+  UPDATE_AUCTION_BID(state, { auctionId, newBid }) {
+    const auctionIndex = state.auctions.findIndex(a => a.id === auctionId);
+    if (auctionIndex !== -1) {
+      const auction = state.auctions[auctionIndex];
+      auction.currentHighestBid = newBid;
+      auction.bidCount++; // Increment the bid count
+      Vue.set(state.auctions, auctionIndex, auction); // Ensure reactivity
+    }
+  },
 };
 
 const actions = {
@@ -32,6 +42,14 @@ const actions = {
       commit("SET_LOADING", false);
     }
   },
+  handleWebSocketMessage({ commit }, message) {
+    if (message.type === 'NEW_BID' && message.data) {
+      commit('UPDATE_AUCTION_BID', {
+        auctionId: message.data.auctionId,
+        newBid: message.data.newBid,
+      });
+    }
+  }
 };
 
 const getters = {
