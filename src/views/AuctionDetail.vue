@@ -1,5 +1,7 @@
 <template>
-  <div v-if="auction" class="auction-details">
+  <div v-if="isLoading" class="loading-state">Loading, please wait...</div>
+  <div v-else-if="hasError" class="error-state">Error: {{ errorMessage }}</div>
+  <div v-else-if="auction" class="auction-details">
     <div class="auction-details" :key="componentKey">
       <!-- Image gallery -->
       <h2 v-if="auction">{{ (auction.title, auction.i) }}</h2>
@@ -171,6 +173,9 @@ export default {
       loading: false,
       auctionHasEnded: false,
       componentKey: 0,
+      isLoading: false,
+      hasError: false,
+      errorMessage: '',
     };
   },
   watch: {
@@ -486,8 +491,9 @@ export default {
       return date.toLocaleString(); // Adjust formatting as needed
     },
     async fetchAuctionDetails(auctionId) {
+      this.isLoading = true;
+      this.hasError = false;
       try {
-        await this.fetchBids(auctionId);
         const auctionData = await AuctionService.getAuction(auctionId);
         if (auctionData) {
           this.auction = auctionData;
@@ -496,9 +502,15 @@ export default {
           }
         } else {
           console.error("Failed to fetch auction data or data is empty");
+          this.hasError = true;
+          this.errorMessage = "Failed to fetch auction data or data is empty";
         }
       } catch (error) {
         console.error("Error fetching auction details:", error);
+        this.hasError = true;
+        this.errorMessage = error.message || "Error fetching auction details";
+      } finally {
+        this.isLoading = false;
       }
     },
     async updateMineralPriceWithWinningBid() {
