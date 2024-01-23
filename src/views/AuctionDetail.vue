@@ -305,8 +305,8 @@ export default {
         "wss:"
       ).replace(/^http:/, "ws:");
 
-      // Remove '/api' from the base URL and append '/ws' to form the WebSocket URL
-      const wsUrl = `${wsBaseUrl.replace("/api", "")}/ws`;
+      // Remove '/api' and any trailing slash from the base URL, then append '/ws' to form the WebSocket URL
+      const wsUrl = `${wsBaseUrl.replace("/api", "").replace(/\/$/, "")}/ws`;
 
       webSocketService.connect(wsUrl);
       webSocketService.onMessage((data) => {
