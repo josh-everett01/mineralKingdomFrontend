@@ -1,14 +1,10 @@
 <template>
   <div class="add-mineral-form">
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <!-- Modal message -->
-        <p>{{ successMessage }}</p>
-        <!-- Close button -->
-        <button class="modal-close-button" @click="closeAndRefresh">
-          Close
-        </button>
-      </div>
+    <div v-if="showSuccessMessage" class="success-message">
+      {{ successMessage }}
+    </div>
+    <div v-if="showErrorMessage" class="error-message">
+      {{ errorMessage }}
     </div>
     <h3>Add New Mineral</h3>
     <form @submit.prevent="submitForm">
@@ -77,13 +73,6 @@
         </select>
       </div>
       <div class="form-group">
-        <label>Status:</label>
-        <select v-model="mineral.status">
-          <option value="Available">Available</option>
-          <option value="Sold">Sold</option>
-        </select>
-      </div>
-      <div class="form-group">
         <label>Image URLs:</label>
         <div
           v-for="(url, index) in mineral.imageURLs"
@@ -108,7 +97,11 @@
         fields are filled in. <br />
         The Video URL and Extra Image URLS are optional.
       </h4>
-      <button type="submit" :disabled="!isFormValid || isSubmitting">
+      <button
+        type="submit"
+        :disabled="!isFormValid || isSubmitting"
+        class="submit-button"
+      >
         Add Mineral
       </button>
     </form>
@@ -117,6 +110,7 @@
 
 <script>
 import MineralService from "../services/MineralService";
+import router from "../router";
 
 export default {
   data() {
@@ -132,8 +126,11 @@ export default {
         isAuctionItem: false,
         imageURLs: [""],
       },
+      showErrorMessage: false,
+      errorMessage: "",
       isSubmitting: false,
       showModal: false,
+      showSuccessMessage: false,
       successMessage: "",
     };
   },
@@ -147,7 +144,7 @@ export default {
         this.mineral.price > 0 &&
         this.mineral.origin.trim() !== "" &&
         this.mineral.imageURL.trim() !== "" &&
-        this.mineral.status.trim() !== ""
+        this.mineral.status !== ""
       );
     },
   },
@@ -185,7 +182,8 @@ export default {
     },
     async submitForm() {
       if (!this.isFormValid) {
-        alert("Please fill out all required fields correctly.");
+        this.errorMessage = "Please fill out all required fields correctly.";
+        this.showErrorMessage = true;
         return;
       }
       this.isSubmitting = true;
@@ -194,14 +192,21 @@ export default {
         console.log("this mineral" + this.mineral.isAuctionItem);
         const addedMineral = await MineralService.addMineral(this.mineral);
         console.log("Mineral added successfully", addedMineral);
-        this.showModal = true;
-        this.successMessage = `Mineral "${this.mineral.name}" added successfully!`; // Set the success message
-        this.showSuccessMessage = true; // Show the success message
-        this.resetForm(); // Reset the form
-        // Optionally, redirect or do something else
+        this.successMessage = `Mineral "${this.mineral.name}" added successfully!`;
+        this.showSuccessMessage = true;
+        alert(`Mineral "${this.mineral.name}" added successfully!`); // Use alert for success message
+        this.resetForm(); // Reset the form after successful submission
+
+        // Redirect to the Admin dashboard after a short delay
+        setTimeout(() => {
+          router.push('/admin'); // Adjust the path as per your routes
+        }, 2000);
       } catch (error) {
         console.error("Error adding mineral:", error);
-        // Handle the error, e.g., show an error notification to the user
+        this.errorMessage = "Failed to add mineral. Please try again.";
+        this.showErrorMessage = true;
+        this.showSuccessMessage = false;
+        this.isSubmitting = false;
       }
     },
   },
@@ -335,12 +340,6 @@ button:disabled {
   margin-bottom: 20px; /* Space below the section */
 }
 
-.success-message {
-  color: black;
-  margin-top: 20px;
-  font-weight: bold;
-}
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -361,5 +360,30 @@ button:disabled {
   padding-bottom: 60px;
   border-radius: 5px;
   z-index: 1001; /* Higher z-index than overlay to be above it */
+}
+
+.submit-button {
+  padding: 10px 15px;
+  background-color: black; /* Black background */
+  color: white; /* White text */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #333; /* Darker shade for hover */
+}
+
+.error-message {
+  color: red;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+.success-message {
+  color: green;
+  margin-top: 20px;
+  font-weight: bold;
 }
 </style>
