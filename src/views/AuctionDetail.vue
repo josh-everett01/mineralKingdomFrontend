@@ -299,11 +299,15 @@ export default {
       }
     },
     async initializeWebSocket() {
+      // Get the base URL from the environment variable and replace 'https' with 'wss' or 'http' with 'ws'
       const wsBaseUrl = process.env.VUE_APP_API_URL.replace(
         /^https:/,
         "wss:"
       ).replace(/^http:/, "ws:");
-      const wsUrl = `${wsBaseUrl}ws`; // Append '/ws' to the base URL
+
+      // Remove '/api' from the base URL and append '/ws' to form the WebSocket URL
+      const wsUrl = `${wsBaseUrl.replace("/api", "")}/ws`;
+
       webSocketService.connect(wsUrl);
       webSocketService.onMessage((data) => {
         const message = JSON.parse(data);
