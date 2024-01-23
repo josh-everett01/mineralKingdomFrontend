@@ -1,8 +1,5 @@
 <template>
   <div class="add-auction-form">
-    <div v-if="showSuccessMessage" class="success-message">
-      {{ successMessage }}
-    </div>
     <h3>Add New Auction</h3>
     <form @submit.prevent="submitForm">
       <div class="form-group">
@@ -73,7 +70,7 @@
           required
         />
       </div>
-      <button type="submit">Add Auction</button>
+      <button type="submit" class="submit-button">Add Auction</button>
     </form>
   </div>
 </template>
@@ -81,6 +78,7 @@
 <script>
 import MineralService from "../services/MineralService";
 import AuctionService from "../services/AuctionService";
+import router from "../router";
 
 export default {
   data() {
@@ -95,8 +93,7 @@ export default {
         auctionStatusId: null,
       },
       mineralsForAuction: [],
-      showSuccessMessage: false,
-      successMessage: "",
+      isSubmitting: false,
     };
   },
   created() {
@@ -135,6 +132,11 @@ export default {
       };
     },
     async submitForm() {
+      if (!this.isFormValid) {
+        alert("Please fill out all required fields correctly."); // Use alert for error message
+        return;
+      }
+      this.isSubmitting = true;
       try {
         const auctionData = {
           title: this.auction.title,
@@ -148,12 +150,17 @@ export default {
         // Call the AuctionService to add the auction
         const addedAuction = await AuctionService.addAuction(auctionData);
         console.log("Auction added successfully", addedAuction);
-        this.successMessage = `Auction "${this.auction.title}" added successfully!`;
-        this.showSuccessMessage = true;
+        alert(`Auction "${this.auction.title}" added successfully!`); // Use alert for success message
         this.resetForm(); // Reset the form after successful submission
+
+        // Redirect to the Admin dashboard after a short delay
+        setTimeout(() => {
+          router.push('/admin'); // Adjust the path as per your routes
+        }, 2000);
       } catch (error) {
         console.error("Error adding auction:", error);
-        // Handle the error, e.g., show an error notification to the user
+        alert("Failed to add auction. Please try again."); // Use alert for error message
+        this.isSubmitting = false;
       }
     },
   },
@@ -166,6 +173,21 @@ export default {
       },
     },
   },
+  computed: {
+    isFormValid() {
+      // Check that all required fields are filled out
+      // and that the data meets validation criteria
+      return (
+        this.auction.title.trim() !== "" &&
+        this.auction.description.trim() !== "" &&
+        this.auction.startingPrice > 0 &&
+        this.auction.startTime.trim() !== "" &&
+        this.auction.endTime.trim() !== "" &&
+        this.auction.mineralId !== null &&
+        this.auction.auctionStatusId !== null
+      );
+    }
+  }
 };
 </script>
 
@@ -207,6 +229,25 @@ button:hover {
 
 .success-message {
   color: green;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+.submit-button {
+  padding: 10px 15px;
+  background-color: black; /* Black background */
+  color: white; /* White text */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #333; /* Darker shade for hover */
+}
+
+.error-message {
+  color: red;
   margin-top: 20px;
   font-weight: bold;
 }

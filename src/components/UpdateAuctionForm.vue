@@ -118,10 +118,11 @@ export default {
           endTime: new Date(this.auctionData.endTime).toISOString(),
         };
         await AuctionService.updateAuction(this.id, updatedAuctionData);
-        // Handle success (e.g., show a message or redirect to a confirmation page)
+        alert("Auction updated successfully!"); // Show success alert
+        this.$router.push("/admin"); // Redirect to the admin dashboard
       } catch (error) {
         console.error("Error updating auction:", error);
-        // Handle error (e.g., show an error message)
+        alert("Failed to update auction. Please try again.");
       }
     },
   },
@@ -153,7 +154,7 @@ select {
 
 button {
   padding: 10px 15px;
-  background-color: #5cb85c;
+  background-color: black;
   color: white;
   border: none;
   border-radius: 5px;
@@ -161,6 +162,6 @@ button {
 }
 
 button:hover {
-  background-color: #4cae4c;
+  background-color: #333;
 }
 </style>
