@@ -301,7 +301,7 @@ export default {
     async initializeWebSocket() {
       const wsBaseUrl = process.env.VUE_APP_API_URL.replace(
         /^https:/,
-        "ws:"
+        "wss:"
       ).replace(/^http:/, "ws:");
       const wsUrl = `${wsBaseUrl}ws`; // Append '/ws' to the base URL
       webSocketService.connect(wsUrl);
