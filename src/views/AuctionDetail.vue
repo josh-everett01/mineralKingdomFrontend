@@ -50,7 +50,7 @@
             :key="index"
             :class="{ 'green-text': isMyBid(bid), 'red-text': !isMyBid(bid) }"
           >
-            ${{ bid.amount.toFixed(2) }} by {{ bid.username }} on
+            ${{ bid.amount.toFixed(2) }} by {{ bid.userId }} on
             {{ formatBidTime(bid.bidTime) }}
           </li>
         </ul>
@@ -90,7 +90,9 @@
             >You currently have the highest bid!</span
           >
         </span>
-
+        <span v-if="auction && auctionHasStarted && !auctionHasEnded">
+          Next Minimum Bid: ${{ minimumBid.toFixed(2) }}
+        </span>
         <span v-if="auction && !auctionHasEnded">
           Auction End: {{ new Date(auction.endTime).toLocaleString() }}
         </span>
@@ -99,13 +101,7 @@
           class="BidpriceField"
           type="number"
           v-model.number="newBidAmount"
-          :min="
-            auction
-              ? currentHighestBid
-                ? currentHighestBid.amount + bidIncrement
-                : auction.startingPrice
-              : 0
-          "
+          :min="minimumBid"
           placeholder="Enter your bid"
         />
         <button @click="placeBid" class="bid-button">Place Bid</button>
@@ -216,8 +212,8 @@ export default {
       const sortedBids = [...this.allBids]
         .sort((a, b) => a.amount - b.amount)
         .slice(-10);
-      console.log("Highest Bid:", this.highestBid);
-      console.log("Is My Bid:", this.isMyBid(this.highestBid));
+      console.log("Highest Bid:", this.highestBid.data.winningBid.amount);
+      console.log("Is My Bid:", this.isMyBid(this.highestBidDetails));
       return sortedBids;
     },
     activeImage() {
@@ -233,14 +229,6 @@ export default {
       }
       return null;
     },
-    // auctionHasEnded() {
-    //   if (!this.auction || !this.auction.endTime) {
-    //     return false;
-    //   }
-    //   const now = new Date();
-    //   const endTime = new Date(this.auction.endTime);
-    //   return now >= endTime;
-    // },
     auctionHasStarted() {
       if (!this.auction || !this.auction.startTime) {
         return false;
@@ -260,27 +248,16 @@ export default {
     bidCount() {
       return this.currentAuction ? this.currentAuction.bidCount : 0;
     },
+    minimumBid() {
+      // Ensure this.highestBid.amount is reactive and properly updated elsewhere in your code
+      const highestBidAmount = this.highestBid ? this.highestBid.data.winningBid.amount : 0;
+      console.log("HighestBid: " + highestBidAmount);
+      const baseBid = highestBidAmount > 0 & highestBidAmount != undefined ? highestBidAmount : this.auction.startingPrice;
+      console.log("Base Bid: " + baseBid);
+      return baseBid + this.bidIncrement;
+    },
   },
   methods: {
-    // async fetchCurrentHighestBid() {
-    //   try {
-    //     const response = await BidService.getCurrentWinningBidForAuction(
-    //       this.auction.id
-    //     );
-    //     if (response && response.winningBid) {
-    //       const user = await UserService.getUserById(
-    //         response.winningBid.userId
-    //       );
-    //       Vue.set(this.currentHighestBid, "amount", response.winningBid.amount);
-    //       Vue.set(this.currentHighestBid, "username", user.username);
-    //     } else {
-    //       Vue.set(this.currentHighestBid, "amount", 0);
-    //       Vue.set(this.currentHighestBid, "username", "");
-    //     }
-    //   } catch (error) {
-    //     console.error("Error fetching current highest bid:", error);
-    //   }
-    // },
     ...mapActions("bids", {
       fetchBids: "fetchBids",
       addBid: "addBid",
@@ -288,14 +265,22 @@ export default {
       fetchWinningBidForCompletedAuction: "fetchWinningBidForCompletedAuction",
       // ... other actions if needed ...
     }),
-    handleWebSocketMessage(message) {
+    async handleWebSocketMessage(message) {
+      console.log("Received WebSocket message:", message);
       if (message.Type === "NEW_BID") {
-        // this.addBid({ bidData: message.data, auctionId: this.auction.id });
-        // Refetch bids to update the bid list
-        this.fetchBids(this.auction.id);
-
+        const newBid = message.Data;
+        console.log("New bid received:", newBid.Amount);
+        await this.fetchBids(this.auction.id);
+        await this.updateHighestBid(this.auction.id);
         // Update highest bid if necessary
-        this.updateHighestBid(this.auction.id);
+        if (newBid.Amount > this.currentHighestBid.amount) {
+          this.$set(this.currentHighestBid, 'amount', newBid.Amount);
+
+          this.currentHighestBid.username = newBid.Username; // Assuming Username is the correct field
+          this.successMessage = `New highest bid: $${newBid.Amount} by ${newBid.Username}`;
+        }
+
+        await this.updateHighestBid(this.auction.id);
       }
     },
     async initializeWebSocket() {
@@ -342,6 +327,7 @@ export default {
           break;
 
         case "AUCTION_TIME_UPDATE":
+          console.log("AUCTION TIME UPDATE: ")
           // Auction time was updated
           this.auction.endTime = new Date(data.newEndTime);
           this.updateCountdown();
@@ -402,17 +388,11 @@ export default {
       alert("Item added to cart successfully!");
     },
     async placeBid() {
-      const minimumBid = this.currentHighestBid
-        ? this.currentHighestBid.amount + this.bidIncrement
-        : this.auction.startingPrice;
-      console.log("Hey Josh here is the minimum bid: " + minimumBid.amount);
-      if (this.newBidAmount < this.auction.startingPrice) {
-        alert(`Your bid must be at least $${this.auction.startingPrice + 1}.`);
-        return;
-      }
-
-      if (this.newBidAmount < minimumBid) {
-        alert(`Your bid must be at least $${minimumBid}.`);
+      console.log(`Current Highest Bid: ${this.highestBid.data.winningBid.amount}`);
+      console.log(`Bid Increment: ${this.bidIncrement}`);
+      console.log(`Minimum Bid: ${this.minimumBid}`);
+      if (this.newBidAmount < this.minimumBid) {
+        alert(`Your bid must be at least $${this.minimumBid.toFixed(2)}.`);
         return;
       }
 
@@ -555,6 +535,7 @@ export default {
       }
     },
     isMyBid(bid) {
+      console.log("BID FOR ISMYBID: " + bid)
       if (bid != undefined) {
         return bid.userId === this.getUser.id;
       } else {
@@ -565,35 +546,31 @@ export default {
     },
   },
   async created() {
-    console.log("COMING TO YOU FROM THE CREATED lifecycle hook")
+    console.log("COMING TO YOU FROM THE CREATED lifecycle hook");
+    // console.log(`Current Highest Bid: ${await this.currentHighestBid.amount}`);
     const auctionId = this.$route.params.id; // Get the id from the route parameters
     if (this.auctionHasEnded) {
       console.log(this.getUser);
       this.fetchWinningBidForCompletedAuction(this.auction.id);
     }
+
     if (auctionId) {
-      // Set up periodic polling to refresh auction details
-      // this.auctionRefreshInterval = setInterval(() => {
-      //   this.refreshAuctionDetails();
-      //   this.refreshCartData();
-      // }, 10000);
-      if (auctionId) {
-        this.loading = true; // Start loading
-        try {
-          await this.initializeWebSocket();
-          await this.fetchAuctionDetails(auctionId);
-          await this.fetchBids(auctionId);
-          await this.updateHighestBid(auctionId);
-          if (this.auction && this.auctionHasEnded) {
-            await this.fetchWinningBidForCompletedAuction(auctionId);
-          }
-        } catch (error) {
-          console.error("Error occurred while fetching data:", error);
-          // Handle the error appropriately
-        } finally {
-          this.loading = false; // End loading, regardless of success or error
+      this.loading = true; // Start loading
+      try {
+        await this.initializeWebSocket();
+        await this.fetchAuctionDetails(auctionId);
+        await this.fetchBids(auctionId);
+        await this.updateHighestBid(auctionId);
+        if (this.auction && this.auctionHasEnded) {
+          await this.fetchWinningBidForCompletedAuction(auctionId);
         }
+      } catch (error) {
+        console.error("Error occurred while fetching data:", error);
+        // Handle the error appropriately
+      } finally {
+        this.loading = false; // End loading, regardless of success or error
       }
+
     } else {
       console.error("Auction ID is not available in route parameters");
     }
