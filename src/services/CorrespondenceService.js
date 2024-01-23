@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://localhost:7240/api/Correspondence";
+const API_URL = process.env.VUE_APP_API_URL + "Correspondence";
 
 class CorrespondenceService {
   async submitInquiry(inquiryData) {
