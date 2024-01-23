@@ -200,7 +200,7 @@ export default {
     ...mapState("bids", {
       allBids: (state) => state.bids,
       highestBid: (state) => state.highestBid,
-      winningBidWithUser: (state) => state.winningBidWithUser
+      winningBidWithUser: (state) => state.winningBidWithUser,
     }),
     allImages() {
       return this.mineral
@@ -284,7 +284,16 @@ export default {
       }
     },
     async initializeWebSocket() {
-      webSocketService.connect("wss://localhost:7240/ws");
+      // Get the base URL from the environment variable and replace 'https' with 'wss' or 'http' with 'ws'
+      const wsBaseUrl = process.env.VUE_APP_API_URL.replace(
+        /^https:/,
+        "wss:"
+      ).replace(/^http:/, "ws:");
+
+      // Remove '/api' and any trailing slash from the base URL, then append '/ws' to form the WebSocket URL
+      const wsUrl = `${wsBaseUrl.replace("/api", "").replace(/\/$/, "")}/ws`;
+
+      webSocketService.connect(wsUrl);
       webSocketService.onMessage((data) => {
         const message = JSON.parse(data);
         this.handleWebSocketMessage(message);
@@ -539,15 +548,14 @@ export default {
       if (bid != undefined) {
         return bid.userId === this.getUser.id;
       } else {
-        return this.getUser.id
+        return this.getUser.id;
       }
       // console.log("GETUSER: " + this.getUser.id);
-
     },
   },
   async created() {
     console.log("COMING TO YOU FROM THE CREATED lifecycle hook");
-    // console.log(`Current Highest Bid: ${await this.currentHighestBid.amount}`);
+    
     const auctionId = this.$route.params.id; // Get the id from the route parameters
     if (this.auctionHasEnded) {
       console.log(this.getUser);
