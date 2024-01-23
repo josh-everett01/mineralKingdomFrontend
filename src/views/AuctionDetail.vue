@@ -547,14 +547,12 @@ export default {
       }
     },
     isMyBid(bid) {
-      console.log("BID FOR ISMYBID: " + bid)
-      if (bid != undefined) {
+      // Check if bid and this.getUser are defined before accessing their properties
+      if (bid && this.getUser && this.getUser.id) {
         return bid.userId === this.getUser.id;
       } else {
-        return this.getUser.id
+        return false; // Return false or handle the undefined case appropriately
       }
-      // console.log("GETUSER: " + this.getUser.id);
-
     },
   },
   async created() {
