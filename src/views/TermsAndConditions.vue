@@ -24,11 +24,12 @@
       <p>
         This Agreement encompasses the rules governing different types of
         transactions ("Transactions") through Mineral Kingdom Services,
-        including our Auction Rules and Buying Rules. Our Privacy Policy is also
+        including our <u><router-link to="/auction-rules">Auction Rules</router-link></u> and <u><router-link to="/buying-rules">Buying Rules</router-link></u>. Our <u><router-link to="/privacy-policy">Privacy Policy</router-link></u> is also
         part of this Agreement, together constituting the entire agreement
         between Mineral Kingdom and you, replacing all previous agreements and
         understandings.
-      </p>
+</p>
+
       <p>
         Mineral Kingdom reserves the right to change this Agreement, posting the
         new version on the mineral-kingdom.com site. The new version will govern
@@ -72,7 +73,7 @@
       <h2>Use of Personal Data</h2>
       <p>
         We will gather, use, and disclose personal, contact, and payment data
-        you have registered with us in accordance with our Privacy Policy.
+        you have registered with us in accordance with our <u><router-link to="/privacy-policy">Privacy Policy</router-link></u>.
         Mineral Kingdom may use "cookies" or other technical means to
         personalize your experience of Mineral Kingdom Services.
       </p>
@@ -81,7 +82,7 @@
     <section>
       <h2>Privacy Policy</h2>
       <p>
-        Mineral Kingdom's Privacy Policy forms part of this Agreement, and by
+        Mineral Kingdom's <u><router-link to="/privacy-policy">Privacy Policy</router-link></u> forms part of this Agreement, and by
         agreeing to these terms and conditions, you also give your consent to
         the way we may handle your personal data as set out in that Policy.
         Mineral Kingdom will not use this data for any other purpose or disclose
@@ -107,8 +108,8 @@
         Mineral Kingdom may offer you the opportunity to take part in the
         following types of Transactions, required by its own Transaction Rules:<br><br>
         <ul>
-          <li>Auction Rules</li>
-          <li>Buying Rules</li>
+          <li><u><router-link to="/auction-rules">Auction Rules</router-link></u></li>
+          <li><u><router-link to="/buying-rules">Buying Rules</router-link></u></li>
         </ul><br>
          The descriptions of, methods of participating
         in, and rules governing each kind of Transaction are set out in the
