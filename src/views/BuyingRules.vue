@@ -92,8 +92,7 @@
       </p>
       <h2>Exceptional Circumstances Only</h2>
       <p>
-        There are, however, a few exceptional circumstances (described in the Ts
-        and Cs) under which an order may be retracted: <br>
+        There are, however, a few exceptional circumstances (described in the <u><router-link to="/terms-and-conditions">T&Cs</router-link></u>) under which an order may be retracted: <br>
         <ul>
           <li>The description of an
         item you have bid on has changed significantly.</li>
