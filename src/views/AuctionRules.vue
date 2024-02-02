@@ -13,10 +13,9 @@
         (b) the specific types of Auction available;<br />
 
         (c) any particular rules associated with them, and
-      </p>
-      <p>
+      </p><p>
         These Auction Rules are legally binding and constitute a part of your
-        agreement with Mineral Kingdom. Please refer to our Buying Rules for
+        agreement with Mineral Kingdom. Please refer to our <u><router-link to="/buying-rules">Buying Rules</router-link></u> for
         items offered through fixed-price (non-auction) buying and selling. By
         participating in an Auction, you acknowledge that you have read,
         understood, and accepted these Auction Rules. We may revise these
@@ -206,8 +205,7 @@
         Mineral Kingdom will synchronize all timing frequently with all browsers, but we are not responsible for variations or inaccuracies in relative time measured by the User's device clock.
         <br>
         The Mineral Kingdom countdown clock will function if our Cookie has been disabled, subject to the caveat above.<br>
-
-(For more information on Cookies, see our Privacy Policy.)
+(For more information on Cookies, see our <u><router-link to="/privacy-policy">Privacy Policy</router-link></u>.)
       </p>
     </section>
 
@@ -221,7 +219,7 @@
     <section>
       <h2>Exceptional Circumstances Only</h2>
       <p>
-        There are a few exceptional circumstances (described in the T&Cs) under which a bid may be retracted. These include typographical errors, significant changes to the item's description, or illicit use of a User ID and password.
+        There are a few exceptional circumstances (described in the <u><router-link to="/terms-and-conditions">T&Cs</router-link></u>) under which a bid may be retracted. These include typographical errors, significant changes to the item's description, or illicit use of a User ID and password.
       </p>
     </section>
     <section>
