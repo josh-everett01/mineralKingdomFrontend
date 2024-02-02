@@ -23,6 +23,10 @@ import AddAuctionForm from "../components/AddAuctionForm.vue";
 import Shop from "../views/Shop.vue";
 import Auctions from "../views/Auctions.vue";
 import Cart from "../views/Cart.vue";
+import PrivacyPolicy from "../views/PrivacyPolicy.vue";
+import TermsAndConditions from "../views/TermsAndConditions.vue";
+import AuctionRules from "../views/AuctionRules.vue";
+import BuyingRules from "../views/BuyingRules.vue";
 
 Vue.use(VueRouter);
 
@@ -116,6 +120,26 @@ const routes = [
         next("/login"); // Redirect to login page if not admin
       }
     },
+  },
+  {
+    path: "/privacy-policy",
+    component: PrivacyPolicy,
+    name: "privacy-policy",
+  },
+  {
+    path: "/terms-and-conditions",
+    component: TermsAndConditions,
+    name: "terms-and-conditions",
+  },
+  {
+    path: "/auction-rules",
+    component: AuctionRules,
+    name: "auction-rules",
+  },
+  {
+    path: "/buying-rules",
+    component: BuyingRules,
+    name: "buying-rules",
   },
   {
     path: "/admin",

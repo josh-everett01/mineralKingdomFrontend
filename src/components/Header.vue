@@ -110,10 +110,15 @@ export default {
   left: 0;
   right: 0;
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.8); /* white with 80% opacity */
+  background-color: rgba(255, 255, 255, 0.8);
   z-index: 1000;
   margin: 1% auto;
-  /* padding: 0 1em; 1em padding on the left and right */
+}
+
+.header a,
+.user-area a {
+  margin: 0 10px;
+  transition: color 0.3s; /* Smooth transition for text color */
 }
 
 .welcomeUserContainer {
