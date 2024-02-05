@@ -86,7 +86,11 @@
               'green-text': isMyBid(highestBidDetails),
               'red-text': !isMyBid(highestBidDetails),
             }"
-            >${{ highestBidDetails.amount.toFixed(2) }}</span
+            >${{ highestBidDetails.amount.toFixed(2) }}
+            <i
+              v-if="isProxyBidActive"
+              class="fas fa-gavel proxy-bid-icon"
+            ></i> </span
           ><br />
           <span v-if="isMyBid(highestBidDetails)" class="green-text"
             >You currently have the highest bid!</span
@@ -99,13 +103,67 @@
           Auction End: {{ new Date(auction.endTime).toLocaleString() }}
         </span>
         <span v-else>No bids yet</span>
+
+        <h2>BID:</h2>
         <input
           class="BidpriceField"
+          :class="{ 'proxy-bid-active': currentUserMaxProxyBid > 0 }"
           type="number"
           v-model.number="newBidAmount"
           :min="minimumBid"
           placeholder="Enter your bid"
         />
+        <div class="bid-increment-info">
+          <h3>Bid Increments</h3>
+          <ul>
+            <li>Up to $24 - $1</li>
+            <li>$25 - $49 - $2</li>
+            <li>$50 - $74 - $3</li>
+            <li>$75 - $99 - $4</li>
+            <li>$100 - $499 - $5</li>
+            <li>$500 - $999 - $10</li>
+            <li>$1000 or more - $25</li>
+          </ul>
+        </div>
+        <div
+          v-if="currentUserMaxProxyBid > 0"
+          class="current-max-proxy-bid-info"
+        >
+          Your current maximum proxy bid: ${{
+            currentUserMaxProxyBid.toFixed(2)
+          }}
+        </div>
+        <h2>MAX BID:</h2>
+        <input
+          class="MaxBidField"
+          type="number"
+          v-model.number="maxBidAmount"
+          :min="minimumBid"
+          placeholder="Enter your maximum bid"
+        />
+        <div class="proxy-bid-toggle">
+          <input type="checkbox" id="proxyBidCheckbox" v-model="isProxyBid" />
+          <div class="proxy-bid-info">
+            <i class="fas fa-info-circle"></i>
+            <label for="proxyBidCheckbox">Set as Proxy Bid</label><br />
+            <div class="proxy-bid-help">
+              <i class="fas fa-question-circle"></i>
+              <span class="tooltip-text">
+                Proxy Bidding: Enter the maximum amount you are willing to bid.
+                The system will automatically bid on your behalf up to your
+                maximum amount.
+              </span>
+            </div>
+            <span class="tooltip-text">
+              Proxy Bidding: Bids are placed through an automated Proxy Bidding
+              system. Users enter their maximum bid, and Mineral Kingdom bids on
+              their behalf, enough to equal the reserve price (if set
+              beforehand) or to beat the high bidder's maximum bid, whichever is
+              higher. The maximum bid remains confidential, and the system bids
+              as necessary to ensure the user remains the highest bidder.
+            </span>
+          </div>
+        </div>
         <button @click="placeBid" class="bid-button">Place Bid</button>
       </div>
       <div
@@ -151,6 +209,7 @@ import AuctionService from "../services/AuctionService";
 import CartService from "../services/CartService";
 import { webSocketService } from "../services/WebSocketService";
 import { mapState, mapGetters, mapActions } from "vuex";
+import BidService from "../services/BidService";
 
 export default {
   data() {
@@ -175,7 +234,10 @@ export default {
       componentKey: 0,
       isLoading: false,
       hasError: false,
-      errorMessage: '',
+      errorMessage: "",
+      minimumBid: 0,
+      maxBidAmount: 0,
+      isProxyBid: false,
     };
   },
   watch: {
@@ -205,8 +267,15 @@ export default {
     ...mapState("bids", {
       allBids: (state) => state.bids,
       highestBid: (state) => state.highestBid,
-      winningBidWithUser: (state) => state.winningBidWithUser
+      winningBidWithUser: (state) => state.winningBidWithUser,
     }),
+    currentUserMaxProxyBid() {
+      // Filter the bids to find the highest proxy bid made by the current user
+      const userProxyBids = this.allBids.filter(bid => bid.userId === this.getUser.id && bid.bidType === 'ProxyBid');
+
+      const maxProxyBid = userProxyBids.reduce((max, bid) => bid.maximumBid > max ? bid.maximumBid : max, 0);
+      return maxProxyBid;
+    },
     allImages() {
       return this.mineral
         ? [this.mineral.imageURL, ...this.mineral.imageURLs].filter(Boolean)
@@ -250,17 +319,21 @@ export default {
         this.auctions.find((auction) => auction.id === this.auctionId) || null
       );
     },
+    isProxyBidActive() {
+      // Logic to determine if the current highest bid is a proxy bid
+      // This might involve checking a property of the highestBidDetails object
+      return this.highestBidDetails && this.highestBidDetails.isProxyBid;
+    },
     bidCount() {
       return this.currentAuction ? this.currentAuction.bidCount : 0;
     },
-    minimumBid() {
-      // Ensure this.highestBid.amount is reactive and properly updated elsewhere in your code
-      const highestBidAmount = this.highestBid ? this.highestBid.data.winningBid.amount : 0;
-      console.log("HighestBid: " + highestBidAmount);
-      const baseBid = highestBidAmount > 0 & highestBidAmount != undefined ? highestBidAmount : this.auction.startingPrice;
-      console.log("Base Bid: " + baseBid);
-      return baseBid + this.bidIncrement;
-    },
+    // minimumBid() {
+    //   const highestBidAmount = this.highestBid?.data?.winningBid?.amount || 0;
+    //   console.log("HighestBid: " + highestBidAmount);
+    //   const baseBid = highestBidAmount > 0 ? highestBidAmount : this.auction?.startingPrice || 0;
+    //   console.log("Base Bid: " + baseBid);
+    //   return baseBid + this.bidIncrement;
+    // },
   },
   methods: {
     ...mapActions("bids", {
@@ -268,8 +341,29 @@ export default {
       addBid: "addBid",
       updateHighestBid: "updateHighestBid",
       fetchWinningBidForCompletedAuction: "fetchWinningBidForCompletedAuction",
+      updateMinimumBid() {
+        console.log("HERE I AM IN INSIDE THE MINIMUM BID: ");
+        const highestBidAmount =
+          this.highestBidDetails && this.highestBidDetails.amount
+            ? this.highestBidDetails.amount
+            : 0;
+        console.log("HighestBidAmount: " + highestBidAmount);
+        const baseBid =
+          highestBidAmount > 0
+            ? highestBidAmount
+            : this.auction?.startingPrice || 0;
+        console.log("BaseBid: " + baseBid);
+        console.log("BidIncrement: " + this.bidIncrement);
+        this.minimumBid = baseBid + this.bidIncrement;
+        console.log(this.minimumBid);
+      },
       // ... other actions if needed ...
     }),
+    // updateMinimumBid() {
+    //   const highestBidAmount = this.highestBidDetails ? this.highestBidDetails.amount : 0;
+    //   const baseBid = highestBidAmount > 0 ? highestBidAmount : this.auction?.startingPrice || 0;
+    //   this.minimumBid = baseBid + this.bidIncrement;
+    // },
     async handleWebSocketMessage(message) {
       console.log("Received WebSocket message:", message);
       if (message.Type === "NEW_BID") {
@@ -278,14 +372,42 @@ export default {
         await this.fetchBids(this.auction.id);
         await this.updateHighestBid(this.auction.id);
         // Update highest bid if necessary
-        if (newBid.Amount > this.currentHighestBid.amount) {
-          this.$set(this.currentHighestBid, 'amount', newBid.Amount);
+        if (newBid?.Amount > this.currentHighestBid.amount) {
+          this.$set(this.currentHighestBid, "amount", newBid.Amount);
 
           this.currentHighestBid.username = newBid.Username; // Assuming Username is the correct field
           this.successMessage = `New highest bid: $${newBid.Amount} by ${newBid.Username}`;
         }
 
         await this.updateHighestBid(this.auction.id);
+        this.updateMinimumBid();
+      } else if (message.Type === "BID_INCREMENT_UPDATE") {
+        // Handle bid increment update
+        console.log("Received WebSocket BID INCREMENT:", message);
+        const bidIncrement = message.Data.NewBidIncrement;
+        console.log("Bid increment updated:", bidIncrement);
+        this.bidIncrement = bidIncrement;
+        this.updateMinimumBid(); // Update the minimum bid based on the new bid increment
+      } else if (message.Type === "NEW_PROXY_BID") {
+        const proxyBidData = message.Data;
+        if (proxyBidData && proxyBidData.proxyBidUser !== undefined && proxyBidData.proxyBidMaxAmount !== undefined) {
+          console.log("Received new proxy bid:", proxyBidData);
+          const proxyBidUser = proxyBidData.proxyBidUser;
+          const proxyBidMaxAmount = proxyBidData.proxyBidMaxAmount;
+          const maxBid = proxyBidData.MaxBid;
+
+          // Update the UI to reflect the new proxy bid
+          this.currentHighestBid = { amount: proxyBidMaxAmount, username: proxyBidUser };
+          this.successMessage = `New proxy bid placed: $${proxyBidMaxAmount.toFixed(2)} with a maximum of $${maxBid.toFixed(2)} by User ${proxyBidUser}`;
+
+          // Fetch the latest bids to update the bid history
+          await this.fetchBids(this.auction.id);
+          await this.updateHighestBid(this.auction.id);
+          this.updateMinimumBid();
+        } else {
+          console.error("Invalid proxy bid data received:", proxyBidData);
+          // Handle the error appropriately (e.g., show an error message to the user)
+        }
       }
     },
     async initializeWebSocket() {
@@ -328,11 +450,14 @@ export default {
           // Auction ended
           this.auctionHasEnded = true;
           this.successMessage = "Auction has ended";
+          if (this.auction && this.auctionHasEnded) {
+            await this.fetchWinningBidForCompletedAuction(this.auction.id);
+          }
           await this.fetchWinningBidForCompletedAuction(this.auction.id);
           break;
 
         case "AUCTION_TIME_UPDATE":
-          console.log("AUCTION TIME UPDATE: ")
+          console.log("AUCTION TIME UPDATE: ");
           // Auction time was updated
           this.auction.endTime = new Date(data.newEndTime);
           this.updateCountdown();
@@ -393,7 +518,17 @@ export default {
       alert("Item added to cart successfully!");
     },
     async placeBid() {
-      console.log(`Current Highest Bid: ${this.highestBid.data.winningBid.amount}`);
+      if (
+        this.highestBid &&
+        this.highestBid.data &&
+        this.highestBid.data.winningBid
+      ) {
+        console.log(
+          `Current Highest Bid: ${this.highestBid.data.winningBid.amount}`
+        );
+      } else {
+        console.log("No highest bid available.");
+      }
       console.log(`Bid Increment: ${this.bidIncrement}`);
       console.log(`Minimum Bid: ${this.minimumBid}`);
       if (this.newBidAmount < this.minimumBid) {
@@ -411,6 +546,15 @@ export default {
       }
 
       if (this.getUser) {
+        if (this.isProxyBid && this.maxBidAmount < this.newBidAmount) {
+          alert(
+            `Your maximum bid must be at least as much as your bid amount.`
+          );
+          return;
+        }
+        const bidType = this.isProxyBid ? "ProxyBid" : "AuctionBid";
+        const maximumBid = this.isProxyBid ? this.maxBidAmount : null;
+
         try {
           await this.addBid({
             bidData: {
@@ -418,6 +562,10 @@ export default {
               bidTime: new Date().toISOString(),
               userId: this.getUser.id,
               auctionId: this.auction.id,
+              maximumBid: maximumBid,
+              isDelayedBid: false,
+              activationTime: new Date().toISOString(),
+              bidType: bidType,
             },
             auctionId: this.auction.id,
           });
@@ -431,6 +579,10 @@ export default {
           }, 5000); // Change 5000 to 7000 for 7 seconds
 
           await this.fetchBids(this.auction.id);
+          await this.updateHighestBid(this.auction.id);
+
+          // Recalculate the minimum bid based on the new highest bid
+          this.updateMinimumBid();
           // await this.fetchCurrentHighestBid();
         } catch (error) {
           console.error("Error placing bid:", error);
@@ -557,32 +709,34 @@ export default {
   },
   async created() {
     console.log("COMING TO YOU FROM THE CREATED lifecycle hook");
-    // console.log(`Current Highest Bid: ${await this.currentHighestBid.amount}`);
     const auctionId = this.$route.params.id; // Get the id from the route parameters
-    if (this.auctionHasEnded) {
-      console.log(this.getUser);
-      this.fetchWinningBidForCompletedAuction(this.auction.id);
+    if (!auctionId) {
+      console.error("Auction ID is not available in route parameters");
+      return;
     }
 
-    if (auctionId) {
-      this.loading = true; // Start loading
-      try {
-        await this.initializeWebSocket();
-        await this.fetchAuctionDetails(auctionId);
-        await this.fetchBids(auctionId);
-        await this.updateHighestBid(auctionId);
-        if (this.auction && this.auctionHasEnded) {
-          await this.fetchWinningBidForCompletedAuction(auctionId);
-        }
-      } catch (error) {
-        console.error("Error occurred while fetching data:", error);
-        // Handle the error appropriately
-      } finally {
-        this.loading = false; // End loading, regardless of success or error
+    this.loading = true; // Start loading
+    try {
+      await this.initializeWebSocket();
+      await this.fetchAuctionDetails(auctionId);
+      await this.fetchBids(auctionId);
+      await this.updateHighestBid(auctionId);
+
+      // Fetch the initial bid increment
+      if (this.auction) {
+        const initialBidIncrement = await BidService.calculateBidIncrement(this.highestBidDetails.amount);
+        this.bidIncrement = initialBidIncrement;
+        this.updateMinimumBid(); // Update the minimum bid based on the initial bid increment
       }
 
-    } else {
-      console.error("Auction ID is not available in route parameters");
+      if (this.auction && this.auctionHasEnded) {
+        await this.fetchWinningBidForCompletedAuction(auctionId);
+      }
+    } catch (error) {
+      console.error("Error occurred while fetching data:", error);
+      // Handle the error appropriately
+    } finally {
+      this.loading = false; // End loading, regardless of success or error
     }
   },
   mounted() {
@@ -602,6 +756,9 @@ export default {
 </script>
 
 <style scoped>
+.proxy-bid-active {
+  background-color: #f0f0f0; /* Light grey background to indicate active proxy bid */
+}
 .auction-details {
   max-width: 75%; /* Match the width of the mineral image */
   margin: auto; /* Center the container */
