@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve --port $PORT",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
     "@stripe/stripe-js": "^2.1.10",
+    "axios": "^1.6.5",
     "core-js": "^3.6.5",
     "socket.io-client": "^4.7.4",
     "vue": "^2.6.11",

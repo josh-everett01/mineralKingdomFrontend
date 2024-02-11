@@ -411,7 +411,16 @@ export default {
       }
     },
     async initializeWebSocket() {
-      webSocketService.connect("wss://localhost:7240/ws");
+      // Get the base URL from the environment variable and replace 'https' with 'wss' or 'http' with 'ws'
+      const wsBaseUrl = process.env.VUE_APP_API_URL.replace(
+        /^https:/,
+        "wss:"
+      ).replace(/^http:/, "ws:");
+
+      // Remove '/api' and any trailing slash from the base URL, then append '/ws' to form the WebSocket URL
+      const wsUrl = `${wsBaseUrl.replace("/api", "").replace(/\/$/, "")}/ws`;
+
+      webSocketService.connect(wsUrl);
       webSocketService.onMessage((data) => {
         const message = JSON.parse(data);
         this.handleWebSocketMessage(message);
@@ -703,12 +712,14 @@ export default {
       if (bid && this.getUser && this.getUser.id) {
         return bid.userId === this.getUser.id;
       } else {
+
         return false; // Return false or handle the undefined case appropriately
       }
     },
   },
   async created() {
     console.log("COMING TO YOU FROM THE CREATED lifecycle hook");
+
     const auctionId = this.$route.params.id; // Get the id from the route parameters
     if (!auctionId) {
       console.error("Auction ID is not available in route parameters");
