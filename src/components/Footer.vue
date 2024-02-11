@@ -2,6 +2,7 @@
 <template>
   <footer
     ref="footer"
+    v-show="isVisible"
     :style="footerStyle"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -28,6 +29,7 @@ export default {
       baseOpacity: 0.8,
       hoverOpacity: 1.0,
       isHovering: false,
+      isVisible: false, // Initially, the footer is not visible
     };
   },
   computed: {
@@ -40,10 +42,12 @@ export default {
   },
   methods: {
     handleScroll() {
-      const scrollTotal =
-        document.documentElement.scrollHeight - window.innerHeight;
+      const scrollTotal = document.documentElement.scrollHeight - window.innerHeight;
       const scrollY = window.scrollY;
       const scrolledPercentage = scrollY / scrollTotal;
+
+      // Show the footer only when the user has scrolled to the bottom of the page
+      this.isVisible = scrolledPercentage >= 1;
 
       // Adjust these values as needed
       const startChange = 0.8; // Start changing opacity at 80% scroll
@@ -85,7 +89,7 @@ export default {
   bottom: 0;
   width: 100%;
   margin: 0;
-  transition: opacity 0.3s ease-in-out; /* Smooth transition for opacity */
+  transition: opacity 1.3s ease-in-out; /* Smooth transition for opacity */
 }
 .footer a {
   color: white;

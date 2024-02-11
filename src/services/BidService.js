@@ -51,6 +51,21 @@ class BidService {
     }
   }
 
+  // In BidService
+  async calculateBidIncrement(currentBid) {
+    try {
+      const response = await axios.get(API_URL + "Bid/" + "calculate-bid-increment", {
+        params: { currentBid }
+      });
+      console.log("Bid increment:", response.data.bidIncrement);
+      return response.data.bidIncrement;
+    } catch (error) {
+      console.error("Error fetching bid increment:", error);
+      throw error;
+    }
+  }
+
+
   async deleteBid(bidId) {
     try {
       const response = await axios.delete(API_URL + "Bid/" + bidId);
